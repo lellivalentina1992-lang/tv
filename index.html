@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TV & Radio Italia TOTALE 2025 - Power Fix</title>
+    <title>TV & Radio Italia TOTALE - Fix 2025</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         :focus { outline: 4px solid #facc15; outline-offset: 2px; }
         .control-button { background-color: #374151; padding: 0.8rem; border-radius: 0.5rem; border: 1px solid #4B5563; font-weight: bold; }
         .channel-card { background-color: #1f2937; border: 1px solid #374151; padding: 12px; border-radius: 8px; margin-bottom: 10px; }
-        .boost-active { background-color: #ef4444 !important; }
+        .active-filter { background-color: #1d4ed8 !important; }
     </style>
 </head>
 <body class="h-full flex flex-col font-sans">
 
     <header class="bg-gray-800 p-4 shadow-md flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold">TV & Radio (Versione Potenziata)</h1>
+            <h1 class="text-xl font-bold">TV & Radio Italia (Riparata)</h1>
             <div id="loadingStatus" class="text-xs text-yellow-500 font-bold" aria-live="assertive">Pronto al caricamento...</div>
         </div>
         <div id="timerDisplay" class="text-sm text-gray-400" aria-live="polite">Timer: OFF</div>
@@ -26,15 +26,15 @@
     <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
         <section class="w-full md:w-1/2 lg:w-1/3 p-4 bg-gray-800 flex flex-col overflow-hidden">
             <div class="mb-4 space-y-3">
-                <label for="filterInput" class="block text-sm font-semibold">Cerca (S) - Filtro (F) - Timer (T) - Info (I) - Salto (A-Z):</label>
+                <label for="filterInput" class="block text-sm font-semibold">Cerca (S) - Filtro (F) - Timer (T) - Info (I) - A-Z:</label>
                 <input type="search" id="filterInput" class="bg-gray-700 text-white border border-gray-600 rounded-lg p-3 w-full text-lg focus:ring-2 focus:ring-yellow-500" placeholder="Cerca...">
                 <div class="flex gap-2">
                     <button onclick="setFilter('all')" id="btn-all" class="control-button flex-1 text-xs active-filter">Tutti</button>
-                    <button onclick="setFilter('tv')" id="btn-tv" class="control-button flex-1 text-xs">Solo TV</button>
-                    <button onclick="setFilter('radio')" id="btn-radio" class="control-button flex-1 text-xs">Solo Radio</button>
+                    <button onclick="setFilter('tv')" id="btn-tv" class="control-button flex-1 text-xs">TV</button>
+                    <button onclick="setFilter('radio')" id="btn-radio" class="control-button flex-1 text-xs">Radio</button>
                 </div>
             </div>
-            <ul id="channelList" class="flex-1 space-y-2 overflow-y-auto pr-2" aria-label="Elenco canali"></ul>
+            <ul id="channelList" class="flex-1 space-y-2 overflow-y-auto pr-2" aria-label="Elenco"></ul>
         </section>
 
         <section class="w-full md:w-1/2 lg:w-2/3 p-4 flex flex-col bg-gray-900">
@@ -55,8 +55,8 @@
         const videoPlayer = document.getElementById('videoPlayer');
         const channelList = document.getElementById('channelList');
         const filterInput = document.getElementById('filterInput');
-        const playerStatus = document.getElementById('player-status');
         const loadingStatus = document.getElementById('loadingStatus');
+        const playerStatus = document.getElementById('player-status');
         const boostBtn = document.getElementById('boostBtn');
 
         let groupedChannels = {}; 
@@ -64,34 +64,37 @@
         let hlsInstance = null, audioCtx, gainNode, isBoosted = false;
         let sleepTimer = null, timerMinutes = 0;
 
-        // Ordine di caricamento ottimizzato: prima le nazionali (veloci), poi le pesanti (regionali)
+        // UNIONE DELLE TUE LISTE INIZIALI + QUELLE REGIONALI/PRO
         const sources = [
-            { name: "Nazionali Tundrak", url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvita.m3u", type: 'tv' },
+            // Le tue liste originali (dal primo file Tv.html)
+            { name: "Originale Italia", url: "https://iptv-org.github.io/iptv/languages/ita.m3u", type: 'tv' },
+            { name: "Originale Pastebin 1", url: "https://pastebin.com/raw/8GpCCkhf", type: 'tv' },
+            { name: "Originale Pastebin 2", url: "https://pastebin.com/raw/aRYDYSEQ", type: 'tv' },
+            { name: "Originale Pastebin 3", url: "https://pastebin.com/raw/sG5cusFp/.m3u", type: 'tv' },
+            // Liste Regionali e Radio (quelle pesanti)
+            { name: "TV Regionali (Pika)", url: "https://raw.githubusercontent.com/pika-m3u/pika-ita/main/pika-ita.m3u", type: 'tv' },
+            { name: "Radio Locali (Pika)", url: "https://raw.githubusercontent.com/pika-m3u/pika-ita/main/radio-ita.m3u", type: 'radio' },
+            { name: "Samsung TV Plus", url: "https://raw.githubusercontent.com/HelmerLanger/SamsungTVPlus-IPTV/main/playlists/it.m3u", type: 'tv' },
+            { name: "Tundrak Nazionale", url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvita.m3u", type: 'tv' },
             { name: "Radio Nazionali", url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/ipradioita.m3u", type: 'radio' },
-            { name: "Samsung TV Plus HD", url: "https://raw.githubusercontent.com/HelmerLanger/SamsungTVPlus-IPTV/main/playlists/it.m3u", type: 'tv' },
-            { name: "TV Regionali Pika", url: "https://raw.githubusercontent.com/pika-m3u/pika-ita/main/pika-ita.m3u", type: 'tv' },
-            { name: "Radio Locali Pika", url: "https://raw.githubusercontent.com/pika-m3u/pika-ita/main/radio-ita.m3u", type: 'radio' },
-            { name: "Sfiorini TV", url: "https://raw.githubusercontent.com/sfiorini/IPTV-Italy/main/it.m3u", type: 'tv' },
-            { name: "Database IPTV-Org", url: "https://iptv-org.github.io/iptv/countries/it.m3u", type: 'tv' }
+            { name: "Sfiorini IT", url: "https://raw.githubusercontent.com/sfiorini/IPTV-Italy/main/it.m3u", type: 'tv' }
         ];
 
         window.addEventListener('DOMContentLoaded', async () => {
-            announce("Avvio caricamento riparato. Durata stimata: 45 secondi.");
+            announce("Avvio caricamento riparato. Attendi circa 40 secondi.");
             
             for (let i = 0; i < sources.length; i++) {
                 const s = sources[i];
-                loadingStatus.textContent = `Caricamento ${s.name} (${i + 1}/${sources.length})...`;
+                loadingStatus.textContent = `Scaricamento ${s.name} (${i+1}/${sources.length})...`;
                 
                 const text = await fetchWithRobustProxies(s.url);
                 if (text) {
                     parseM3U(text, s.type);
                     const currentCount = Object.keys(groupedChannels).length;
-                    loadingStatus.textContent = `${currentCount} canali nel database...`;
-                } else {
-                    announce(`Attenzione: fallito caricamento di ${s.name}`);
+                    loadingStatus.textContent = `${currentCount} canali trovati...`;
                 }
 
-                // Pausa obbligatoria di 3 secondi per non sovraccaricare il sistema
+                // Pausa obbligatoria di 3 secondi per non farti bloccare dai server
                 if (i < sources.length - 1) {
                     await new Promise(resolve => setTimeout(resolve, 3000));
                 }
@@ -103,21 +106,22 @@
             announce(`Caricamento completato. Trovati ${total} canali unici.`);
         });
 
-        // MOTORE DI CARICAMENTO CORAZZATO
+        // MOTORE DI CARICAMENTO RIPARATO (Correzione 404 e CORS)
         async function fetchWithRobustProxies(url) {
+            // Proviamo i proxy in ordine di stabilità
             const proxies = [
-                u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`, // Molto stabile per GitHub
-                u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
-                u => `https://corsproxy.io/?url=${encodeURIComponent(u)}` // Solo come ultima spiaggia
+                u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`, // Primo tentativo
+                u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,      // Secondo tentativo
+                u => `https://corsproxy.io/?${encodeURIComponent(u)}`                    // Terzo (senza url=)
             ];
 
             for (const p of proxies) {
                 try {
                     const finalUrl = p(url);
-                    const r = await fetch(finalUrl, { signal: AbortSignal.timeout(20000) });
+                    const r = await fetch(finalUrl, { signal: AbortSignal.timeout(15000) });
                     if (r.ok) {
                         const txt = await r.text();
-                        if (txt && txt.includes("#EXTM3U")) return txt;
+                        if (txt.includes("#EXTM3U")) return txt;
                     }
                 } catch (e) {
                     console.warn("Proxy fallito, provo il successivo...");
@@ -133,7 +137,6 @@
                 .replace(/\bHD\b/gi, '')
                 .replace(/\bSD\b/gi, '')
                 .replace(/\bIT\b/gi, '')
-                .replace(/\b(720p|1080p|576p|480p)\b/gi, '')
                 .replace(/\s+/g, ' ')
                 .trim();
         }
@@ -211,7 +214,7 @@
                 case 'f': 
                     const next = currentFilter === 'all' ? 'tv' : currentFilter === 'tv' ? 'radio' : 'all';
                     setFilter(next);
-                    announce(`Modalità ${next}`);
+                    announce(`Filtro: ${next}`);
                     break;
                 case ' ': e.preventDefault(); togglePlayPause(); break;
                 case 'b': toggleVolumeBoost(); break;
@@ -267,7 +270,6 @@
 
         function announce(m) { playerStatus.textContent = ''; setTimeout(() => playerStatus.textContent = m, 100); }
         function togglePlayPause() { videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause(); }
-        function cycleSleepTimer() { /* logica timer */ }
         filterInput.addEventListener('input', refreshList);
     </script>
 </body>
