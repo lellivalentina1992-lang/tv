@@ -3,51 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TV Smart Search - Integrazione Totale</title>
+    <title>TV Smart Search - Accessibile</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
+        /* Outline ad alto contrasto per la navigazione da tastiera */
         :focus { outline: 4px solid #facc15; outline-offset: 2px; }
         .control-button { background-color: #374151; padding: 0.8rem; border-radius: 0.5rem; border: 1px solid #4B5563; font-weight: bold; }
         .channel-card { background-color: #1f2937; border: 1px solid #374151; padding: 12px; border-radius: 8px; margin-bottom: 10px; }
-        .active-filter { background-color: #1d4ed8 !important; }
+        .active-filter { background-color: #1d4ed8 !important; border-color: #60a5fa !important; }
     </style>
 </head>
 <body class="h-full flex flex-col font-sans">
 
     <header class="bg-gray-800 p-4 shadow-md flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold">TV Smart Search (Integrato)</h1>
+            <h1 class="text-xl font-bold">TV Smart Search</h1>
             <div id="loadingStatus" class="text-xs text-yellow-500 font-bold" aria-live="assertive">Inizializzazione...</div>
         </div>
         <div id="timerDisplay" class="text-sm text-gray-400" aria-live="polite">Timer: OFF</div>
     </header>
 
     <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
-        <section class="w-full md:w-1/2 lg:w-1/3 p-4 bg-gray-800 flex flex-col overflow-hidden">
+        <section class="w-full md:w-1/2 lg:w-1/3 p-4 bg-gray-800 flex flex-col overflow-hidden" aria-label="Selezione Canali">
             <div class="mb-4 space-y-3">
-                <label for="filterInput" class="block text-sm font-semibold">Cerca (S) - Filtro (F) - Info (I) - A-Z:</label>
+                <label for="filterInput" class="block text-sm font-semibold">Cerca (S) o naviga con le iniziali (A-Z):</label>
                 <input type="search" id="filterInput" class="bg-gray-700 text-white border border-gray-600 rounded-lg p-3 w-full text-lg focus:ring-2 focus:ring-yellow-500" placeholder="Es: Rai 1, Radio Deejay...">
-                <div class="flex gap-2">
+                
+                <div class="flex gap-2" role="group" aria-label="Filtri tipologia">
                     <button onclick="setFilter('all')" id="btn-all" class="control-button flex-1 text-xs active-filter">Tutti</button>
-                    <button onclick="setFilter('tv')" id="btn-tv" class="control-button flex-1 text-xs">TV</button>
-                    <button onclick="setFilter('radio')" id="btn-radio" class="control-button flex-1 text-xs">Radio</button>
+                    <button onclick="setFilter('tv')" id="btn-tv" class="control-button flex-1 text-xs">Solo TV</button>
+                    <button onclick="setFilter('radio')" id="btn-radio" class="control-button flex-1 text-xs">Solo Radio</button>
                 </div>
             </div>
             <ul id="channelList" class="flex-1 space-y-2 overflow-y-auto pr-2" aria-label="Elenco canali"></ul>
         </section>
 
-        <section class="w-full md:w-1/2 lg:w-2/3 p-4 flex flex-col bg-gray-900">
+        <section class="w-full md:w-1/2 lg:w-2/3 p-4 flex flex-col bg-gray-900" aria-label="Riproduttore">
             <div class="flex-1 flex items-center justify-center bg-black rounded-lg relative">
                 <video id="videoPlayer" crossorigin="anonymous" class="w-full max-h-[60vh]"></video>
             </div>
+            
             <div id="connection-log" class="text-sm text-yellow-500 mt-2 text-center h-6" aria-live="polite"></div>
+            
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
-                <button onclick="togglePlayPause()" class="control-button">Play/Pausa</button>
+                <button onclick="togglePlayPause()" class="control-button">Play/Pausa (Spazio)</button>
                 <button id="boostBtn" onclick="toggleVolumeBoost()" class="control-button">Boost 200%</button>
-                <button onclick="cycleSleepTimer()" class="control-button">Timer</button>
+                <button onclick="announceCurrentChannel()" class="control-button">Info Canale (I)</button>
             </div>
-            <div id="player-status" class="sr-only" aria-live="polite"></div>
+
+            <div id="player-status" class="sr-only" aria-live="assertive"></div>
         </section>
     </main>
 
@@ -64,25 +69,24 @@
         let hlsInstance = null, audioCtx, gainNode, isBoosted = false;
         let currentChannelName = '', currentSources = [], currentSourceIndex = 0;
 
-        // Tutte le tue liste (Originali + Predefinite del file Tv.html)
         const sources = [
             { name: "In The Mix", url: "http://inthemix.altervista.org/tv.m3u", type: 'tv' },
             { name: "TivuStream", url: "https://tivustream.website/urls/listm3u", type: 'tv' },
-            { name: "Pastebin 1", url: "https://pastebin.com/raw/8GpCCkhf", type: 'tv' },
-            { name: "Pastebin 2", url: "https://pastebin.com/raw/aRYDYSEQ", type: 'tv' },
             { name: "Bit.ly ITA", url: "https://bit.ly/itatv", type: 'tv' },
             { name: "IPTV-Org ITA", url: "https://iptv-org.github.io/iptv/languages/ita.m3u", type: 'tv' },
-            { name: "PandaSat", url: "http://www.pandasat.info/iptv/kodi", type: 'tv' },
             { name: "Tundrak TV", url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvita.m3u", type: 'tv' },
-            { name: "Tundrak Radio", url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/ipradioita.m3u", type: 'radio' },
-            { name: "Sfiorini IT", url: "https://raw.githubusercontent.com/sfiorini/IPTV-Italy/main/it.m3u", type: 'tv' }
+            { name: "Tundrak Radio", url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/ipradioita.m3u", type: 'radio' }
         ];
+
+        function announce(m) {
+            playerStatus.textContent = '';
+            setTimeout(() => { playerStatus.textContent = m; }, 100);
+        }
 
         window.addEventListener('DOMContentLoaded', async () => {
             announce("Avvio caricamento globale. Attendere.");
             
-            for (let i = 0; i < sources.length; i++) {
-                const s = sources[i];
+            for (const s of sources) {
                 loadingStatus.textContent = `Scaricamento ${s.name}...`;
                 const text = await fetchWithRobustProxies(s.url);
                 if (text) parseM3U(text, s.type);
@@ -97,11 +101,12 @@
         async function fetchWithRobustProxies(url) {
             const proxies = [
                 u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
-                u => `https://corsproxy.io/?${encodeURIComponent(u)}`
+                u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+                u => `https://thingproxy.freeboard.io/fetch/${u}`
             ];
             for (const p of proxies) {
                 try {
-                    const r = await fetch(p(url), { signal: AbortSignal.timeout(10000) });
+                    const r = await fetch(p(url), { signal: AbortSignal.timeout(8000) });
                     if (r.ok) {
                         const txt = await r.text();
                         if (txt.includes("#EXTM3U")) return txt;
@@ -129,8 +134,10 @@
 
         function setFilter(type) {
             currentFilter = type;
-            document.querySelectorAll('.control-button').forEach(b => b.classList.remove('active-filter'));
-            document.getElementById(`btn-${type}`).classList.add('active-filter');
+            document.querySelectorAll('[id^="btn-"]').forEach(b => b.classList.remove('active-filter'));
+            const activeBtn = document.getElementById(`btn-${type}`);
+            if(activeBtn) activeBtn.classList.add('active-filter');
+            announce(`Filtro ${type === 'all' ? 'tutti i canali' : type} attivato`);
             refreshList();
         }
 
@@ -155,18 +162,23 @@
                 </li>`).join('');
         }
 
-        // TASTIERA ACCESSIBILE
+        // GESTIONE TASTIERA
         window.addEventListener('keydown', (e) => {
             if (document.activeElement === filterInput && e.key !== 'Escape') return;
             const key = e.key.toLowerCase();
+            
             if (key.length === 1 && key >= 'a' && key <= 'z') {
                 const target = Array.from(channelList.children).find(li => 
                     li.querySelector('span').textContent.toLowerCase().startsWith(key)
                 );
-                if (target) { target.scrollIntoView(); target.querySelector('button').focus(); announce(`Sezione ${key.toUpperCase()}`); }
+                if (target) { 
+                    target.scrollIntoView(); 
+                    target.querySelector('button').focus(); 
+                    announce(`Sezione ${key.toUpperCase()}`); 
+                }
             }
-            if (key === 's') { e.preventDefault(); filterInput.focus(); }
-            if (key === 'i') announce(`In onda: ${currentChannelName || 'Nulla'}`);
+            if (key === 's') { e.preventDefault(); filterInput.focus(); announce("Campo di ricerca"); }
+            if (key === 'i') announceCurrentChannel();
             if (key === ' ') { e.preventDefault(); togglePlayPause(); }
         });
 
@@ -179,51 +191,70 @@
 
         function trySource() {
             if (currentSourceIndex >= currentSources.length) { 
-                announce("Tutte le fonti hanno fallito."); 
+                announce("Tutte le fonti hanno fallito per " + currentChannelName); 
                 logArea.textContent = "Errore: sorgenti non disponibili.";
                 return; 
             }
             const url = currentSources[currentSourceIndex];
             logArea.textContent = `Tentativo sorgente ${currentSourceIndex + 1}...`;
-            announce(`Provo sorgente ${currentSourceIndex + 1}`);
+            announce(`Provo sorgente ${currentSourceIndex + 1} di ${currentSources.length}`);
             
             if (hlsInstance) hlsInstance.destroy();
             
             if (url.includes('.m3u8') && Hls.isSupported()) {
                 hlsInstance = new Hls({ manifestLoadingTimeOut: 5000 });
-                hlsInstance.loadSource(url); hlsInstance.attachMedia(videoPlayer);
-                hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { videoPlayer.play(); playBeep(); logArea.textContent = "Connesso!"; });
+                hlsInstance.loadSource(url); 
+                hlsInstance.attachMedia(videoPlayer);
+                hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { 
+                    videoPlayer.play(); playBeep(); announce("In riproduzione: " + currentChannelName);
+                });
                 hlsInstance.on(Hls.Events.ERROR, (e, d) => { if(d.fatal) { currentSourceIndex++; trySource(); } });
             } else {
                 videoPlayer.src = url;
-                videoPlayer.play().then(() => { playBeep(); logArea.textContent = "Connesso!"; }).catch(() => { currentSourceIndex++; trySource(); });
+                videoPlayer.play()
+                    .then(() => { playBeep(); announce("In riproduzione: " + currentChannelName); })
+                    .catch(() => { currentSourceIndex++; trySource(); });
             }
         }
 
         function playBeep() {
-            if (!audioCtx) audioCtx = new AudioContext();
-            const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            osc.connect(g); g.connect(audioCtx.destination);
-            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-            g.gain.setValueAtTime(0, audioCtx.currentTime);
-            g.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.05);
-            g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                osc.connect(g); g.connect(audioCtx.destination);
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+                g.gain.setValueAtTime(0, audioCtx.currentTime);
+                g.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.05);
+                g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } catch(e) {}
         }
 
         function toggleVolumeBoost() {
-            if (!audioCtx) audioCtx = new AudioContext();
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (!gainNode) {
                 const s = audioCtx.createMediaElementSource(videoPlayer);
                 gainNode = audioCtx.createGain(); s.connect(gainNode); gainNode.connect(audioCtx.destination);
             }
             isBoosted = !isBoosted;
             gainNode.gain.value = isBoosted ? 2.0 : 1.0;
-            announce(isBoosted ? "Boost 200% attivo" : "Audio normale");
+            announce(isBoosted ? "Boost audio attivo al duecento per cento" : "Volume riportato al livello normale");
         }
 
-        function announce(m) { playerStatus.textContent = ''; setTimeout(() => playerStatus.textContent = m, 100); }
-        function togglePlayPause() { videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause(); }
+        function togglePlayPause() {
+            if (videoPlayer.paused) {
+                videoPlayer.play();
+                announce("Riproduzione ripresa");
+            } else {
+                videoPlayer.pause();
+                announce("Pausa");
+            }
+        }
+
+        function announceCurrentChannel() {
+            announce(currentChannelName ? `Stai ascoltando: ${currentChannelName}` : "Nessun canale in riproduzione");
+        }
+
         filterInput.addEventListener('input', refreshList);
     </script>
 </body>
