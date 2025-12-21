@@ -3,50 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TV Smart Search - VLC Link</title>
+    <title>TV Smart Search - Accessibile</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         :focus { outline: 4px solid #facc15; outline-offset: 2px; }
-        .control-button { background-color: #374151; padding: 0.8rem; border-radius: 0.5rem; border: 1px solid #4B5563; font-weight: bold; }
-        .channel-card { background-color: #1f2937; border: 1px solid #374151; padding: 12px; border-radius: 8px; margin-bottom: 10px; }
+        .control-button { background-color: #374151; padding: 0.8rem; border-radius: 0.5rem; border: 1px solid #4B5563; font-weight: bold; width: 100%; }
+        .channel-card { background-color: #1f2937; border: 1px solid #374151; padding: 12px; border-radius: 8px; list-style: none; }
         .active-filter { background-color: #1d4ed8 !important; border-color: #60a5fa !important; }
-        .vlc-button { background-color: #4b5563; color: #ffffff; padding: 0.5rem; border-radius: 0.3rem; font-size: 0.8rem; margin-top: 5px; width: 100%; font-weight: bold; }
+        .vlc-button { background-color: #4b5563; color: #ffffff; padding: 0.5rem; border-radius: 0.3rem; font-size: 0.8rem; margin-top: 8px; width: 100%; font-weight: bold; }
     </style>
 </head>
 <body class="h-full flex flex-col font-sans">
 
-    <header class="bg-gray-800 p-4 shadow-md flex justify-between items-center">
+    <header class="bg-gray-800 p-4 shadow-md flex justify-between items-center" role="banner">
         <div>
             <h1 class="text-xl font-bold">TV Smart Search + VLC</h1>
-            <div id="loadingStatus" class="text-xs text-yellow-500 font-bold" aria-live="assertive">Inizializzazione...</div>
+            <div id="loadingStatus" class="text-xs text-yellow-500 font-bold" aria-live="polite">Inizializzazione...</div>
         </div>
     </header>
 
-    <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
-        <section class="w-full md:w-1/2 lg:w-1/3 p-4 bg-gray-800 flex flex-col overflow-hidden" aria-label="Lista Canali">
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden" role="main">
+        <section class="w-full md:w-1/2 lg:w-1/3 p-4 bg-gray-800 flex flex-col overflow-hidden" aria-labelledby="list-heading">
+            <h2 id="list-heading" class="sr-only">Lista Canali e Filtri</h2>
+            
             <div class="mb-4 space-y-3">
-                <label for="filterInput" class="block text-sm font-semibold">Cerca (S) o naviga (A-Z):</label>
+                <label for="filterInput" class="block text-sm font-semibold">Cerca canali (Scorciatoia: tasto S):</label>
                 <input type="search" id="filterInput" class="bg-gray-700 text-white border border-gray-600 rounded-lg p-3 w-full text-lg focus:ring-2 focus:ring-yellow-500" placeholder="Es: Rai 1...">
                 
-                <div class="flex gap-2">
-                    <button onclick="setFilter('all')" id="btn-all" class="control-button flex-1 text-xs active-filter">Tutti</button>
-                    <button onclick="setFilter('tv')" id="btn-tv" class="control-button flex-1 text-xs">TV</button>
-                    <button onclick="setFilter('radio')" id="btn-radio" class="control-button flex-1 text-xs">Radio</button>
-                </div>
+                <nav class="flex gap-2" aria-label="Filtri categoria">
+                    <button onclick="setFilter('all')" id="btn-all" class="control-button text-xs active-filter" aria-pressed="true">Tutti</button>
+                    <button onclick="setFilter('tv')" id="btn-tv" class="control-button text-xs" aria-pressed="false">TV</button>
+                    <button onclick="setFilter('radio')" id="btn-radio" class="control-button text-xs" aria-pressed="false">Radio</button>
+                </nav>
             </div>
-            <ul id="channelList" class="flex-1 space-y-2 overflow-y-auto pr-2" aria-label="Risultati"></ul>
+
+            <ul id="channelList" class="flex-1 space-y-2 overflow-y-auto pr-2" aria-label="Risultati canali">
+                </ul>
         </section>
 
-        <section class="w-full md:w-1/2 lg:w-2/3 p-4 flex flex-col bg-gray-900" aria-label="Player">
+        <section class="w-full md:w-1/2 lg:w-2/3 p-4 flex flex-col bg-gray-900" aria-label="Player Video">
             <div class="flex-1 flex items-center justify-center bg-black rounded-lg relative">
-                <video id="videoPlayer" crossorigin="anonymous" class="w-full max-h-[60vh]"></video>
+                <video id="videoPlayer" crossorigin="anonymous" class="w-full max-h-[60vh]" title="Riproduttore multimediale"></video>
             </div>
+            
             <div id="connection-log" class="text-sm text-yellow-500 mt-2 text-center h-6" aria-live="polite"></div>
+            
             <div class="grid grid-cols-2 gap-2 mt-4">
                 <button onclick="togglePlayPause()" class="control-button">Play/Pausa (Spazio)</button>
                 <button onclick="copyCurrentSource()" class="control-button">Copia Link Attuale</button>
             </div>
+            
             <div id="player-status" class="sr-only" aria-live="assertive"></div>
         </section>
     </main>
@@ -81,25 +88,26 @@
         }
 
         window.addEventListener('DOMContentLoaded', function() {
-            announce("Caricamento canali in corso.");
+            announce("Avvio applicazione. Caricamento sorgenti in corso.");
             loadAllSources();
         });
 
         async function loadAllSources() {
             for (var i = 0; i < sources.length; i++) {
                 var s = sources[i];
-                loadingStatus.textContent = "Caricamento " + s.name;
+                loadingStatus.textContent = "Caricamento " + s.name + "...";
                 var text = await fetchWithProxies(s.url);
                 if (text) parseM3U(text, s.type);
             }
-            setFilter('all');
+            refreshList();
             var total = Object.keys(groupedChannels).length;
-            loadingStatus.textContent = "Canali: " + total;
-            announce("Pronto. " + total + " canali caricati.");
+            loadingStatus.textContent = "Canali pronti: " + total;
+            announce("Caricamento completato. " + total + " canali disponibili.");
         }
 
         async function fetchWithProxies(url) {
             var proxyList = [
+                "https://api.allorigins.win/raw?url=",
                 "https://api.codetabs.com/v1/proxy?quest=",
                 "https://corsproxy.io/?"
             ];
@@ -108,7 +116,7 @@
                     var response = await fetch(proxyList[i] + encodeURIComponent(url));
                     if (response.ok) {
                         var txt = await response.text();
-                        if (txt.indexOf("#EXTM3U") !== -1) return txt;
+                        if (txt.includes("#EXTM3U")) return txt;
                     }
                 } catch (e) {}
             }
@@ -116,17 +124,20 @@
         }
 
         function parseM3U(text, type) {
-            var lines = text.split('\n');
-            var rawName = "";
+            var lines = text.split(/\r?\n/);
+            var lastInfo = "";
             for (var i = 0; i < lines.length; i++) {
                 var line = lines[i].trim();
-                if (line.indexOf("#EXTINF:") === 0) {
-                    rawName = line.split(',').pop().trim();
-                } else if (line && line.indexOf("#") !== 0) {
-                    var cleaned = rawName.replace(/\[.*?\]|\(.*?\)/g, "").trim();
-                    if (!cleaned || cleaned.length < 2) continue;
-                    if (!groupedChannels[cleaned]) groupedChannels[cleaned] = { urls: [], type: type };
-                    if (groupedChannels[cleaned].urls.indexOf(line) === -1) {
+                if (line.startsWith("#EXTINF:")) {
+                    lastInfo = line.split(',').pop().trim();
+                } else if (line && !line.startsWith("#")) {
+                    var cleaned = lastInfo.replace(/\[.*?\]|\(.*?\)|\*|\|/g, "").trim();
+                    if (!cleaned) cleaned = "Canale senza nome";
+                    
+                    if (!groupedChannels[cleaned]) {
+                        groupedChannels[cleaned] = { urls: [], type: type };
+                    }
+                    if (!groupedChannels[cleaned].urls.includes(line)) {
                         groupedChannels[cleaned].urls.push(line);
                     }
                 }
@@ -135,33 +146,42 @@
 
         function setFilter(type) {
             currentFilter = type;
-            var btns = document.querySelectorAll(".control-button");
-            for (var i = 0; i < btns.length; i++) btns[i].classList.remove("active-filter");
-            var active = document.getElementById("btn-" + type);
-            if (active) active.classList.add("active-filter");
+            document.querySelectorAll("[aria-pressed]").forEach(btn => {
+                btn.setAttribute("aria-pressed", "false");
+                btn.classList.remove("active-filter");
+            });
+            var activeBtn = document.getElementById("btn-" + type);
+            activeBtn.setAttribute("aria-pressed", "true");
+            activeBtn.classList.add("active-filter");
             refreshList();
         }
 
         function refreshList() {
             var q = filterInput.value.toLowerCase();
-            var names = Object.keys(groupedChannels).filter(function(n) {
-                var matchesSearch = n.toLowerCase().indexOf(q) !== -1;
+            var filteredNames = Object.keys(groupedChannels).filter(function(n) {
+                var matchesSearch = n.toLowerCase().includes(q);
                 var matchesType = (currentFilter === "all") || (groupedChannels[n].type === currentFilter);
                 return matchesSearch && matchesType;
             }).sort();
-            renderResults(names);
+            
+            renderResults(filteredNames);
+            announce("Trovati " + filteredNames.length + " canali.");
         }
 
         function renderResults(names) {
             var html = "";
-            for (var i = 0; i < names.length; i++) {
-                var n = names[i];
-                var enc = encodeURIComponent(n);
-                html += '<li class="channel-card">';
-                html += '<span class="font-bold text-yellow-500">' + n + '</span><br>';
-                html += '<button onclick="startSmartPlay(\'' + enc + '\')" class="w-full bg-blue-600 p-2 rounded mt-2 font-bold" aria-label="Riproduci ' + n + '">Riproduci</button>';
-                html += '<button onclick="copyLink(\'' + enc + '\')" class="vlc-button" aria-label="Copia link VLC per ' + n + '">Copia Link VLC</button>';
-                html += '</li>';
+            if (names.length === 0) {
+                html = '<li class="p-4 text-center">Nessun canale trovato con questi criteri.</li>';
+            } else {
+                for (var i = 0; i < names.length; i++) {
+                    var n = names[i];
+                    var enc = encodeURIComponent(n);
+                    html += '<li class="channel-card">';
+                    html += '<h3 class="font-bold text-yellow-500">' + n + '</h3>';
+                    html += '<button onclick="startSmartPlay(\'' + enc + '\')" class="w-full bg-blue-600 p-2 rounded mt-2 font-bold" aria-label="Riproduci ' + n + '">Riproduci</button>';
+                    html += '<button onclick="copyLink(\'' + enc + '\')" class="vlc-button" aria-label="Copia link VLC per ' + n + '">Copia Link VLC</button>';
+                    html += '</li>';
+                }
             }
             channelList.innerHTML = html;
         }
@@ -170,7 +190,7 @@
             var name = decodeURIComponent(encodedName);
             var firstUrl = groupedChannels[name].urls[0];
             navigator.clipboard.writeText(firstUrl).then(function() {
-                announce("Link di " + name + " copiato negli appunti. Puoi incollarlo in VLC.");
+                announce("Link di " + name + " copiato. Incollalo in VLC.");
             });
         }
 
@@ -181,7 +201,7 @@
                     announce("Link sorgente attuale copiato.");
                 });
             } else {
-                announce("Nessun link disponibile.");
+                announce("Nessun link disponibile per la copia.");
             }
         }
 
@@ -194,49 +214,72 @@
 
         function trySource() {
             if (currentSourceIndex >= currentSources.length) {
-                announce("Tutte le fonti fallite. Usa il pulsante Copia Link VLC per questo canale.");
-                logArea.textContent = "Fallito. Copia link manualmente.";
+                announce("Tutte le fonti per " + currentChannelName + " sono fallite.");
+                logArea.textContent = "Errore di connessione.";
                 return;
             }
+            
             var url = currentSources[currentSourceIndex];
-            logArea.textContent = "Prova sorgente " + (currentSourceIndex + 1);
+            logArea.textContent = "Tentativo sorgente " + (currentSourceIndex + 1) + " di " + currentSources.length;
             
             if (hlsInstance) hlsInstance.destroy();
 
-            if (url.indexOf(".m3u8") !== -1 && Hls.isSupported()) {
-                hlsInstance = new Hls();
+            var isHLS = url.includes(".m3u8") || url.includes("m3u8");
+
+            if (isHLS && Hls.isSupported()) {
+                hlsInstance = new Hls({ disableEEOS: true, manifestLoadingTimeOut: 5000 });
                 hlsInstance.loadSource(url);
                 hlsInstance.attachMedia(videoPlayer);
                 hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
-                    videoPlayer.play();
-                    announce("In riproduzione: " + currentChannelName);
+                    videoPlayer.play().then(() => announce("In riproduzione: " + currentChannelName));
                 });
-                hlsInstance.on(Hls.Events.ERROR, function(e, data) {
-                    if (data.fatal) { currentSourceIndex++; trySource(); }
+                hlsInstance.on(Hls.Events.ERROR, function(event, data) {
+                    if (data.fatal) {
+                        currentSourceIndex++;
+                        trySource();
+                    }
                 });
             } else {
                 videoPlayer.src = url;
                 videoPlayer.play().then(function() {
                     announce("In riproduzione: " + currentChannelName);
                 }).catch(function() {
-                    currentSourceIndex++; trySource();
+                    currentSourceIndex++;
+                    trySource();
                 });
             }
         }
 
         function togglePlayPause() {
-            if (videoPlayer.paused) { videoPlayer.play(); announce("Play"); }
-            else { videoPlayer.pause(); announce("Pausa"); }
+            if (videoPlayer.paused) {
+                videoPlayer.play();
+                announce("Riproduzione avviata");
+            } else {
+                videoPlayer.pause();
+                announce("In pausa");
+            }
         }
 
         window.addEventListener("keydown", function(e) {
             var k = e.key.toLowerCase();
-            if (document.activeElement === filterInput && k !== "escape") return;
-            if (k === "s") { e.preventDefault(); filterInput.focus(); announce("Cerca"); }
-            if (k === " ") { e.preventDefault(); togglePlayPause(); }
+            if (document.activeElement.tagName === "INPUT" && k !== "escape") return;
+            
+            if (k === "s") { 
+                e.preventDefault(); 
+                filterInput.focus(); 
+                announce("Ricerca attivata. Scrivi il nome del canale."); 
+            }
+            if (k === " ") { 
+                e.preventDefault(); 
+                togglePlayPause(); 
+            }
         });
 
-        filterInput.addEventListener("input", refreshList);
+        filterInput.addEventListener("input", function() {
+            // Debounce minimo per non sovraccaricare lo screen reader
+            clearTimeout(window.searchTimer);
+            window.searchTimer = setTimeout(refreshList, 500);
+        });
     </script>
 </body>
 </html>
