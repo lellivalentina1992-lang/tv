@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full bg-gray-900 text-white">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart TV & Radio Italia 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        :focus { outline: 4px solid #facc15; outline-offset: 2px; }
+        .control-button { background-color: #374151; padding: 0.8rem; border-radius: 0.5rem; border: 1px solid #4B5563; font-weight: bold; }
+        .channel-card { background-color: #1f2937; border: 1px solid #374151; padding: 12px; border-radius: 8px; margin-bottom: 10px; }
+        .active-filter { background-color: #1d4ed8 !important; border-color: #60a5fa; }
+        .boost-active { background-color: #ef4444 !important; }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans">
+
+    <header class="bg-gray-800 p-4 shadow-md flex justify-between items-center">
+        <div>
+            <h1 class="text-xl font-bold">TV & Radio Unificata</h1>
+            <div id="filterStatusDisplay" class="text-xs text-blue-400 font-bold" aria-live="polite">Modalità: Tutti</div>
+        </div>
+        <div id="timerDisplay" class="text-sm text-gray-400" aria-live="polite">Timer: OFF</div>
+    </header>
+
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
+        <section class="w-full md:w-1/2 lg:w-1/3 p-4 bg-gray-800 flex flex-col overflow-hidden">
+            <div class="mb-4 space-y-3">
+                <label for="filterInput" class="block text-sm font-semibold">Cerca (Tasti: S Cerca, F Filtro, I Info, T Timer):</label>
+                <input type="search" id="filterInput" class="bg-gray-700 text-white border border-gray-600 rounded-lg p-3 w-full text-lg focus:ring-2 focus:ring-yellow-500" placeholder="Rai, Deejay, Lazio...">
+                <div class="flex gap-2" role="group">
+                    <button onclick="setFilter('all')" id="btn-all" class="control-button flex-1 text-xs">Tutti</button>
+                    <button onclick="setFilter('tv')" id="btn-tv" class="control-button flex-1 text-xs">TV</button>
+                    <button onclick="setFilter('radio')" id="btn-radio" class="control-button flex-1 text-xs">Radio</button>
+                </div>
+            </div>
+            <ul id="channelList" class="flex-1 space-y-2 overflow-y-auto pr-2" aria-label="Elenco"></ul>
+        </section>
+
+        <section class="w-full md:w-1/2 lg:w-2/3 p-4 flex flex-col bg-gray-900">
+            <div class="flex-1 flex items-center justify-center bg-black rounded-lg">
+                <video id="videoPlayer" crossorigin="anonymous" class="w-full max-h-[60vh]"></video>
+            </div>
+            <div id="connection-log" class="text-sm text-yellow-500 mt-2 text-center h-6" aria-live="polite"></div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
+                <button onclick="togglePlayPause()" class="control-button">Play/Pausa</button>
+                <button id="boostBtn" onclick="toggleVolumeBoost()" class="control-button">Boost 200%</button>
+                <button onclick="cycleSleepTimer()" class="control-button">Timer (T)</button>
+            </div>
+            <div id="player-status" class="sr-only" aria-live="polite"></div>
+        </section>
+    </main>
+
+    <script>
+        const videoPlayer = document.getElementById('videoPlayer');
+        const channelList = document.getElementById('channelList');
+        const filterInput = document.getElementById('filterInput');
+        const playerStatus = document.getElementById('player-status');
+        const boostBtn = document.getElementById('boostBtn');
+
+        let groupedChannels = {}; 
+        let currentFilter = localStorage.getItem('lastFilter') || 'all';
+        let currentChannelName = "";
+        let hlsInstance = null, audioCtx, gainNode, isBoosted = false;
+        let sleepTimer = null, timerMinutes = 0;
+
+        // Tutte le liste confermate (Nazionali, Regionali, Locali, Radio)
+        const sources = [
+            { url: "https://raw.githubusercontent.com/pika-m3u/pika-ita/main/radio-ita.m3u", type: 'radio' },
+            { url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/ipradioita.m3u", type: 'radio' },
+            { url: "https://raw.githubusercontent.com/pika-m3u/pika-ita/main/pika-ita.m3u", type: 'tv' },
+            { url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvita.m3u", type: 'tv' },
+            { url: "https://raw.githubusercontent.com/sfiorini/IPTV-Italy/main/it.m3u", type: 'tv' },
+            { url: "https://raw.githubusercontent.com/acidumirae/iptv-ita/main/iptv-ita.m3u", type: 'tv' },
+            { url: "https://raw.githubusercontent.com/arvimo/iptv-it/main/it.m3u", type: 'tv' },
+            { url: "https://tvit.leicaflorianrobert.dev/iptv/list.m3u", type: 'tv' }
+        ];
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            announce("Caricamento database unificato...");
+            const results = await Promise.all(sources.map(async s => {
+                let text = await fetchWithRetry(`https://corsproxy.io/?${encodeURIComponent(s.url)}`);
+                if (!text) text = await fetchWithRetry(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(s.url)}`);
+                return { text, type: s.type };
+            }));
+            results.forEach(res => { if(res && res.text) parseM3U(res.text, res.type); });
+            setFilter(currentFilter);
+            announce("Sistema pronto. Scegli un canale per iniziare.");
+        });
+
+        async function fetchWithRetry(url) {
+            try { const r = await fetch(url); return r.ok ? await r.text() : null; } catch { return null; }
+        }
+
+        function parseM3U(text, type) {
+            const lines = text.split('\n');
+            let name = '';
+            const radioKeywords = ['radio', 'fm', 'network', 'rds', 'kiss kiss', 'capital', 'm2o'];
+            lines.forEach(line => {
+                if (line.startsWith('#EXTINF:')) name = line.split(',').pop().trim();
+                else if (line.trim() && !line.startsWith('#')) {
+                    let finalType = type;
+                    // Tagging intelligente: se il nome dice Radio, è una Radio a prescindere dalla lista
+                    if (radioKeywords.some(k => name.toLowerCase().includes(k))) finalType = 'radio';
+                    if (!groupedChannels[name]) groupedChannels[name] = { urls: [], type: finalType };
+                    if (!groupedChannels[name].urls.includes(line.trim())) groupedChannels[name].urls.push(line.trim());
+                }
+            });
+        }
+
+        function setFilter(type) {
+            currentFilter = type;
+            localStorage.setItem('lastFilter', type);
+            document.querySelectorAll('[id^="btn-"]').forEach(b => b.classList.toggle('active-filter', b.id === `btn-${type}`));
+            document.getElementById('filterStatusDisplay').textContent = `Modalità: ${type === 'all' ? 'Tutti' : type.toUpperCase()}`;
+            refreshList();
+        }
+
+        function refreshList() {
+            const query = filterInput.value.toLowerCase();
+            const filtered = Object.keys(groupedChannels).filter(n => {
+                return n.toLowerCase().includes(query) && (currentFilter === 'all' || groupedChannels[n].type === currentFilter);
+            }).sort();
+            renderResults(filtered);
+        }
+
+        function renderResults(names) {
+            channelList.innerHTML = names.map(name => `
+                <li class="channel-card">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-bold text-yellow-500">${name}</span>
+                        <span class="text-[10px] text-gray-500">${groupedChannels[name].type.toUpperCase()}</span>
+                    </div>
+                    <button onclick="startSmartPlay('${encodeURIComponent(name)}')" class="w-full bg-blue-600 p-2 rounded font-bold">Riproduci</button>
+                </li>`).join('');
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (document.activeElement === filterInput && e.key !== 'Escape') return;
+            switch(e.key.toLowerCase()) {
+                case 'f': setFilter(currentFilter === 'all' ? 'tv' : currentFilter === 'tv' ? 'radio' : 'all'); announce(`Modalità ${currentFilter}`); break;
+                case 'i': announce(`Canale: ${currentChannelName || 'Nessuno'}. Boost: ${isBoosted ? 'ON' : 'OFF'}`); break;
+                case 's': e.preventDefault(); filterInput.focus(); break;
+                case ' ': e.preventDefault(); togglePlayPause(); break;
+                case 't': cycleSleepTimer(); break;
+                case 'b': toggleVolumeBoost(); break;
+            }
+        });
+
+        function startSmartPlay(name) {
+            currentChannelName = decodeURIComponent(name);
+            currentSources = groupedChannels[currentChannelName].urls;
+            currentSourceIndex = 0;
+            trySource();
+        }
+
+        function trySource() {
+            if (currentSourceIndex >= currentSources.length) { announce("Nessuna sorgente attiva."); return; }
+            const url = currentSources[currentSourceIndex];
+            announce(`Provo sorgente ${currentSourceIndex + 1}`);
+            if (hlsInstance) hlsInstance.destroy();
+            if (url.includes('.m3u8') && Hls.isSupported()) {
+                hlsInstance = new Hls({ manifestLoadingTimeOut: 4000 });
+                hlsInstance.loadSource(url); hlsInstance.attachMedia(videoPlayer);
+                hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { videoPlayer.play(); playBeep(); });
+                hlsInstance.on(Hls.Events.ERROR, (e, d) => { if(d.fatal) { currentSourceIndex++; trySource(); } });
+            } else {
+                videoPlayer.src = url;
+                videoPlayer.play().then(playBeep).catch(() => { currentSourceIndex++; trySource(); });
+            }
+        }
+
+        function playBeep() {
+            if (!audioCtx) audioCtx = new AudioContext();
+            const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
+            osc.connect(g); g.connect(audioCtx.destination);
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            g.gain.setValueAtTime(0, audioCtx.currentTime);
+            g.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.05);
+            g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+        function toggleVolumeBoost() {
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (!gainNode) {
+                const source = audioCtx.createMediaElementSource(videoPlayer);
+                gainNode = audioCtx.createGain();
+                source.connect(gainNode); gainNode.connect(audioCtx.destination);
+            }
+            isBoosted = !isBoosted;
+            gainNode.gain.value = isBoosted ? 2.0 : 1.0;
+            boostBtn.classList.toggle('boost-active', isBoosted);
+            announce(isBoosted ? "Boost 200% attivo" : "Audio normale");
+        }
+
+        function cycleSleepTimer() {
+            const stages = [0, 15, 30, 60];
+            timerMinutes = stages[(stages.indexOf(timerMinutes) + 1) % stages.length];
+            clearTimeout(sleepTimer);
+            if (timerMinutes > 0) sleepTimer = setTimeout(() => videoPlayer.pause(), timerMinutes * 60000);
+            announce(timerMinutes > 0 ? `Timer ${timerMinutes} minuti` : "Timer spento");
+            document.getElementById('timerDisplay').textContent = timerMinutes > 0 ? `Timer: ${timerMinutes} min` : "Timer: OFF";
+        }
+
+        function announce(m) { playerStatus.textContent = ''; setTimeout(() => playerStatus.textContent = m, 100); }
+        function togglePlayPause() { videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause(); }
+        filterInput.addEventListener('input', refreshList);
+    </script>
+</body>
+</html>
