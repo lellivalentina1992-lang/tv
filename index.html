@@ -3,49 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TV & Radio Smart Search 2025 - Ultimate</title>
+    <title>TV & Radio Smart Search 2025</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         :focus { outline: 5px solid #3b82f6 !important; outline-offset: 4px; }
-        .channel-card { background-color: #1f2937; border: 2px solid #374151; padding: 1.2rem; border-radius: 12px; margin-bottom: 1rem; }
-        .control-button { background-color: #374151; color: white; padding: 1rem; border-radius: 8px; font-weight: bold; width: 100%; border: 1px solid #4b5563; }
-        .control-button:hover, .control-button:focus { background-color: #1e40af; }
+        .menu-button { background: #1e40af; border: 4px solid #3b82f6; padding: 2.5rem; border-radius: 1.5rem; font-size: 2rem; font-weight: bold; width: 100%; }
+        .channel-card { background-color: #1f2937; border: 2px solid #374151; padding: 0.5rem; border-radius: 12px; margin-bottom: 1rem; display: flex; flex-direction: column; }
+        .btn-channel { width: 100%; text-align: left; background: #2563eb; padding: 1.2rem; border-radius: 8px; font-weight: bold; font-size: 1.2rem; margin-bottom: 5px; }
+        .btn-copy { background: #374151; padding: 0.6rem; border-radius: 6px; font-size: 0.9rem; width: 100%; text-align: center; color: #9ca3af; }
+        .hidden { display: none; }
     </style>
 </head>
 <body class="h-full flex flex-col font-sans overflow-hidden">
 
-    <header class="bg-gray-800 p-4 shadow-lg border-b border-gray-700">
-        <h1 class="text-2xl font-bold text-yellow-500 text-center">TV & Radio Database Totale</h1>
-        <div id="loadingStatus" class="text-sm text-gray-400 text-center mt-1" aria-live="polite">Avvio sistema...</div>
+    <header class="bg-gray-800 p-4 border-b border-gray-700 shadow-lg text-center">
+        <h1 class="text-2xl font-bold text-yellow-500">Database Canali 2025</h1>
+        <div id="loadingStatus" class="text-sm text-gray-400 mt-1" aria-live="polite">Analisi liste in corso...</div>
     </header>
 
-    <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
-        <section class="w-full md:w-1/3 p-4 bg-gray-800 flex flex-col border-r border-gray-700 overflow-hidden" aria-label="Ricerca">
-            <div class="mb-4">
-                <label for="filterInput" class="block text-sm font-bold mb-2">Cerca (S per cercare, Frecce per volume, Spazio per Play):</label>
-                <input type="search" id="filterInput" class="w-full bg-gray-700 text-white p-4 rounded-lg border-2 border-gray-600 focus:border-yellow-500" placeholder="Es: Canale 5, Radio Deejay..." autocomplete="off">
+    <main class="flex-1 flex flex-col overflow-hidden p-4">
+        
+        <section id="selectionMenu" class="hidden h-full flex flex-col justify-center items-center space-y-10">
+            <h2 id="summaryText" class="text-xl font-bold text-gray-300 text-center" aria-live="assertive"></h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-2xl">
+                <button id="btnTv" class="menu-button">TELEVISIONE</button>
+                <button id="btnRadio" class="menu-button">RADIO</button>
             </div>
-            <ul id="channelList" class="flex-1 space-y-4 overflow-y-auto pr-2" role="list"></ul>
         </section>
 
-        <section class="w-full md:w-2/3 p-4 flex flex-col bg-gray-900">
-            <div class="flex-1 flex items-center justify-center bg-black rounded-xl relative overflow-hidden">
-                <video id="videoPlayer" controls class="w-full max-h-[60vh] rounded-lg"></video>
-                <div id="statusArea" class="absolute bottom-4 left-4 right-4 bg-black bg-opacity-90 p-4 rounded-lg text-center text-yellow-400 font-bold border border-yellow-800" aria-live="assertive">
-                    Pronto. Usa 'S' per cercare un canale.
+        <section id="channelPanel" class="hidden h-full flex flex-col md:flex-row gap-4 overflow-hidden">
+            <div class="w-full md:w-1/3 flex flex-col overflow-hidden">
+                <button id="btnBack" class="bg-gray-700 p-4 rounded-lg mb-4 font-bold text-yellow-500">← Torna alla Scelta</button>
+                <div class="mb-4">
+                    <label for="filterInput" class="block text-sm font-bold mb-2">Cerca (Tasto rapido: S):</label>
+                    <input type="search" id="filterInput" class="w-full bg-gray-700 p-4 rounded-lg border-2 border-gray-600 focus:border-yellow-500">
                 </div>
+                <ul id="channelList" class="flex-1 space-y-4 overflow-y-auto pr-2" role="list"></ul>
             </div>
 
-            <div class="grid grid-cols-3 gap-3 mt-6" role="group" aria-label="Controlli">
-                <button id="play-pause-btn" class="control-button">Play/Pausa</button>
-                <button id="vol-down-btn" class="control-button">Vol -</button>
-                <button id="vol-up-btn" class="control-button">Vol +</button>
-            </div>
-
-            <div class="mt-4">
-                <label for="channelUrl" class="block text-xs font-medium text-gray-500 mb-1">Link diretto per VLC:</label>
-                <input type="text" id="channelUrl" readonly class="w-full bg-gray-800 text-blue-400 p-2 rounded border border-gray-700 font-mono text-xs" placeholder="Seleziona un canale...">
+            <div class="w-full md:w-2/3 flex flex-col bg-black rounded-xl relative overflow-hidden">
+                <video id="videoPlayer" controls class="w-full h-full"></video>
+                <div id="statusArea" class="absolute bottom-10 left-6 right-6 bg-black bg-opacity-90 p-5 rounded-lg text-center text-yellow-400 font-bold border-2 border-yellow-600" aria-live="assertive">
+                    Seleziona un canale.
+                </div>
             </div>
         </section>
     </main>
@@ -55,146 +56,172 @@
         const listContainer = document.getElementById('channelList');
         const filterInput = document.getElementById('filterInput');
         const statusArea = document.getElementById('statusArea');
-        const channelUrlInput = document.getElementById('channelUrl');
-        const loadingStatus = document.getElementById('loadingStatus');
+        const selectionMenu = document.getElementById('selectionMenu');
+        const channelPanel = document.getElementById('channelPanel');
+        const summaryText = document.getElementById('summaryText');
 
-        let channels = {}; 
+        let tvChannels = {}; 
+        let radioChannels = {};
+        let currentData = {};
         let hlsInstance = null;
         const proxy1 = "https://corsproxy.io/?";
         const proxy2 = "https://api.codetabs.com/v1/proxy?quest=";
 
-        // TUTTE LE 19 SORGENTI UNITE dai tuoi file
         const m3uSources = [
-            { name: "Fulgione Tivu", url: "https://davidefulgione.it/tivu.m3u" },
-            { name: "TivuStream HTTP", url: "http://tivustream.website/urls/listm3u" },
-            { name: "TivuStream HTTPS", url: "https://tivustream.website/urls/listm3u" },
-            { name: "Tundrak Radio", url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/ipradioita.m3u" },
-            { name: "Tundrak Italia", url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvita.m3u" },
-            { name: "Fulgione Standard", url: "http://davidefulgione.it/tv.m3u" },
-            { name: "Fulgione EPG", url: "http://davidefulgione.it/tv-epg.m3u" },
-            { name: "In The Mix", url: "http://inthemix.altervista.org/tv.m3u" },
-            { name: "Bitly ITA", url: "https://bit.ly/itatv" },
-            { name: "PandaSat", url: "http://www.pandasat.info/iptv/kodi" },
-            { name: "IPTV-Org ITA", url: "https://iptv-org.github.io/iptv/languages/ita.m3u" },
-            { name: "IPTV-Org Global", url: "https://iptv-org.github.io/iptv/index.m3u" },
-            { name: "IPTV-Org UK", url: "https://iptv-org.github.io/iptv/countries/uk.m3u" },
-            { name: "TivuStream Music", url: "https://tivustream.website/urls/tivustreammusic" },
-            { name: "TivuStream Sport", url: "https://tivustream.website/urls/tivustreamsport" },
-            { name: "Pastebin 1", url: "https://pastebin.com/raw/8GpCCkhf" },
-            { name: "Pastebin 2", url: "https://pastebin.com/raw/aRYDYSEQ" },
-            { name: "QDR Forum", url: "https://pastebin.com/raw/sG5cusFp/.m3u" },
-            { name: "Tundrak Plus", url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvitaplus.m3u" }
+            { url: "https://davidefulgione.it/tivu.m3u", type: "mixed" },
+            { url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/ipradioita.m3u", type: "radio" },
+            { url: "http://tivustream.website/urls/listm3u", type: "tv" },
+            { url: "https://bit.ly/itatv", type: "tv" },
+            { url: "https://iptv-org.github.io/iptv/languages/ita.m3u", type: "tv" }
         ];
 
-        function announce(msg) { statusArea.textContent = msg; }
-
         async function init() {
-            announce("Caricamento database globale...");
+            document.getElementById('loadingStatus').textContent = "Organizzazione canali italiani...";
             for (const s of m3uSources) {
                 try {
-                    loadingStatus.textContent = `Caricamento ${s.name}...`;
-                    let text = "";
-                    try {
-                        const res = await fetch(proxy1 + encodeURIComponent(s.url));
-                        if (res.ok) text = await res.text();
-                        else throw new Error();
-                    } catch {
-                        const res = await fetch(proxy2 + encodeURIComponent(s.url));
-                        if (res.ok) text = await res.text();
-                    }
-                    if (text) parseM3U(text);
-                } catch (e) { console.warn("Sorgente saltata:", s.name); }
+                    const res = await fetch(proxy1 + encodeURIComponent(s.url));
+                    const text = res.ok ? await res.text() : await (await fetch(proxy2 + encodeURIComponent(s.url))).text();
+                    parseM3U(text, s.type);
+                } catch (e) { console.warn("Sorgente saltata"); }
             }
-            renderChannels();
-            const total = Object.keys(channels).length;
-            loadingStatus.textContent = `${total} contenuti caricati.`;
-            announce(`Sistema pronto. Trovati ${total} canali e radio.`);
+            showMenu();
         }
 
-        function parseM3U(data) {
+        function parseM3U(data, sourceType) {
             const lines = data.split('\n');
             let name = "";
             lines.forEach(line => {
                 line = line.trim();
+                // Pulizia radicale dei tag M3U
                 if (line.startsWith("#EXTINF:")) {
-                    name = line.split(',').pop().trim().replace(/\[.*?\]/g, "").trim();
+                    name = line.split(',').pop().trim()
+                               .replace(/#EXTINF:.*?,/, "") // Rimuove residui tag
+                               .replace(/\[.*?\]/g, "")     // Rimuove scritte tra parentesi
+                               .replace(/#EXTINF:-1\./, "") // Rimuove prefissi tecnici russi/bulgari
+                               .trim();
                 } else if (line.startsWith("http") && name) {
-                    if (!channels[name]) channels[name] = [];
-                    if (!channels[name].includes(line)) channels[name].push(line);
+                    // Scarta i messaggi di aggiornamento o le righe di intestazione
+                    if (name.includes("UPDATE") || name.includes("---") || name.length < 2) return;
+
+                    const lowerName = name.toLowerCase();
+                    const isTv = lowerName.includes("tv") || lowerName.includes("television") || sourceType === "tv";
+                    const isRadio = (lowerName.includes("radio") || lowerName.includes("fm") || sourceType === "radio") && !lowerName.includes("tv");
+                    
+                    const target = (isRadio && !isTv) ? radioChannels : tvChannels;
+                    if (!target[name]) target[name] = [];
+                    if (!target[name].includes(line)) target[name].push(line);
                 }
             });
         }
 
+        function showMenu() {
+            const tvNum = Object.keys(tvChannels).length;
+            const rdNum = Object.keys(radioChannels).length;
+            summaryText.textContent = `Analisi completata. TV: ${tvNum}. Radio: ${rdNum}.`;
+            selectionMenu.classList.remove('hidden');
+            document.getElementById('loadingStatus').classList.add('hidden');
+        }
+
+        document.getElementById('btnTv').onclick = () => openPanel(tvChannels, "Televisione");
+        document.getElementById('btnRadio').onclick = () => openPanel(radioChannels, "Radio");
+
+        function openPanel(data, label) {
+            currentData = data;
+            selectionMenu.classList.add('hidden');
+            channelPanel.classList.remove('hidden');
+            renderChannels();
+        }
+
+        document.getElementById('btnBack').onclick = () => {
+            channelPanel.classList.add('hidden');
+            selectionMenu.classList.remove('hidden');
+            video.pause();
+        };
+
         function renderChannels(query = "") {
             listContainer.innerHTML = "";
-            const filtered = Object.keys(channels)
-                .filter(c => c.toLowerCase().includes(query.toLowerCase()))
-                .sort();
+            const keys = Object.keys(currentData);
+            
+            // LOGICA DI ORDINAMENTO: Italia prima, poi il resto
+            const sortedKeys = keys.sort((a, b) => {
+                const aIt = isItalian(a);
+                const bIt = isItalian(b);
+                if (aIt && !bIt) return -1;
+                if (!aIt && bIt) return 1;
+                return a.localeCompare(b);
+            });
+
+            const filtered = sortedKeys.filter(c => c.toLowerCase().includes(query.toLowerCase()));
 
             filtered.forEach(name => {
                 const li = document.createElement('li');
                 li.className = "channel-card";
-                const title = document.createElement('h2');
-                title.className = "text-lg font-bold text-yellow-500 mb-2";
-                title.textContent = name;
-                const playBtn = document.createElement('button');
-                playBtn.className = "w-full bg-blue-600 p-4 rounded-lg font-bold uppercase";
-                playBtn.textContent = `Avvia ${name}`;
-                playBtn.onclick = () => autoPlay(name);
-                li.appendChild(title);
-                li.appendChild(playBtn);
+                
+                // Pulsante Canale (Sente subito il nome)
+                const btn = document.createElement('button');
+                btn.className = "btn-channel";
+                btn.textContent = name; 
+                btn.onclick = () => autoPlay(name);
+                
+                // Pulsante Copia separato (Per screen reader dopo il nome)
+                const copyBtn = document.createElement('button');
+                copyBtn.className = "btn-copy";
+                copyBtn.textContent = `Copia link di ${name}`;
+                copyBtn.onclick = (e) => { e.stopPropagation(); copyLink(currentData[name][0], name); };
+
+                li.appendChild(btn);
+                li.appendChild(copyBtn);
                 listContainer.appendChild(li);
             });
         }
 
+        // Funzione per capire se un canale è italiano
+        function isItalian(name) {
+            const itKeywords = ['rai', 'mediaset', 'italia', 'sky', 'la7', 'canale 5', 'rtl', 'deejay', 'mhz'];
+            return itKeywords.some(key => name.toLowerCase().includes(key));
+        }
+
+        function copyLink(url, name) {
+            navigator.clipboard.writeText(url).then(() => {
+                statusArea.textContent = `Link di ${name} copiato.`;
+            });
+        }
+
         async function autoPlay(name) {
-            const urls = channels[name];
-            announce(`Connessione a ${name}...`);
+            const urls = currentData[name];
+            statusArea.textContent = `Avvio ${name}...`;
             for (let i = 0; i < urls.length; i++) {
                 const success = await tryPlay(urls[i], name);
-                if (success) { channelUrlInput.value = urls[i]; return; }
+                if (success) return;
             }
-            announce(`Errore: Nessun segnale per ${name}.`);
+            statusArea.textContent = `Errore. Usa il tasto Copia Link per VLC.`;
         }
 
         function tryPlay(url, name) {
             return new Promise((resolve) => {
                 if (hlsInstance) hlsInstance.destroy();
-                const timeout = setTimeout(() => resolve(false), 8000);
+                const timeout = setTimeout(() => resolve(false), 7000);
                 if (url.includes(".m3u8") && Hls.isSupported()) {
-                    hlsInstance = new Hls({ manifestLoadingTimeOut: 4000 });
+                    hlsInstance = new Hls({ manifestLoadingTimeOut: 3000 });
                     hlsInstance.loadSource(url);
                     hlsInstance.attachMedia(video);
                     hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
                         clearTimeout(timeout);
-                        video.play().then(() => { announce(`In onda: ${name}`); resolve(true); }).catch(() => resolve(false));
+                        video.play().then(() => { statusArea.textContent = `In onda: ${name}`; resolve(true); }).catch(() => resolve(false));
                     });
                     hlsInstance.on(Hls.Events.ERROR, () => resolve(false));
                 } else {
                     video.src = url;
-                    video.play().then(() => { clearTimeout(timeout); announce(`In onda: ${name}`); resolve(true); }).catch(() => resolve(false));
+                    video.play().then(() => { clearTimeout(timeout); statusArea.textContent = `In onda: ${name}`; resolve(true); }).catch(() => resolve(false));
                 }
             });
         }
 
-        // CONTROLLI TASTIERA DEFINITIVI
         window.addEventListener('keydown', (e) => {
-            if (document.activeElement === filterInput && e.key !== 'Escape') return;
-
-            switch(e.key.toLowerCase()) {
-                case 's': e.preventDefault(); filterInput.focus(); announce("Ricerca"); break;
-                case ' ': e.preventDefault(); 
-                    if (video.paused) { video.play(); announce("Play"); } 
-                    else { video.pause(); announce("Pausa"); } break;
-                case 'arrowup': e.preventDefault(); video.volume = Math.min(1, video.volume + 0.1); announce(`Vol ${Math.round(video.volume*100)}%`); break;
-                case 'arrowdown': e.preventDefault(); video.volume = Math.max(0, video.volume - 0.1); announce(`Vol ${Math.round(video.volume*100)}%`); break;
-                case 'm': e.preventDefault(); video.muted = !video.muted; announce(video.muted ? "Muto" : "Audio attivo"); break;
+            if (e.key.toLowerCase() === 's' && document.activeElement !== filterInput) {
+                e.preventDefault(); filterInput.focus();
             }
         });
-
-        document.getElementById('play-pause-btn').onclick = () => video.paused ? video.play() : video.pause();
-        document.getElementById('vol-up-btn').onclick = () => { video.volume = Math.min(1, video.volume + 0.1); announce(`Vol ${Math.round(video.volume*100)}%`); };
-        document.getElementById('vol-down-btn').onclick = () => { video.volume = Math.max(0, video.volume - 0.1); announce(`Vol ${Math.round(video.volume*100)}%`); };
 
         filterInput.addEventListener('input', (e) => renderChannels(e.target.value));
         init();
