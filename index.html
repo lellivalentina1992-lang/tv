@@ -9,7 +9,7 @@
     <style>
         :focus { outline: 5px solid #3b82f6 !important; outline-offset: 4px; }
         .menu-button { background: #1e40af; border: 4px solid #3b82f6; padding: 2.5rem; border-radius: 1.5rem; font-size: 2rem; font-weight: bold; width: 100%; }
-        .channel-card { background-color: #1f2937; border: 2px solid #374151; padding: 0.5rem; border-radius: 12px; margin-bottom: 1rem; }
+        .channel-card { background-color: #1f2937; border: 2px solid #374151; padding: 0.6rem; border-radius: 12px; margin-bottom: 1rem; }
         .btn-channel { width: 100%; text-align: left; background: #2563eb; padding: 1.2rem; border-radius: 8px; font-weight: bold; font-size: 1.3rem; }
         .btn-copy { background: #374151; padding: 0.8rem; border-radius: 6px; font-size: 1rem; width: 100%; text-align: center; color: #d1d5db; margin-top: 5px; }
         .hidden { display: none; }
@@ -18,8 +18,8 @@
 <body class="h-full flex flex-col font-sans overflow-hidden">
 
     <header class="bg-gray-800 p-4 border-b border-gray-700 shadow-lg text-center">
-        <h1 class="text-2xl font-bold text-yellow-500">Database Integrale 2025</h1>
-        <div id="loadingStatus" class="text-sm text-gray-400 mt-1" aria-live="polite">Caricamento di tutti i canali...</div>
+        <h1 class="text-2xl font-bold text-yellow-500">Database Integrale</h1>
+        <div id="loadingStatus" class="text-sm text-gray-400 mt-1" aria-live="polite">Caricamento di tutte le 19 sorgenti...</div>
     </header>
 
     <main class="flex-1 flex flex-col overflow-hidden p-4">
@@ -34,10 +34,10 @@
 
         <section id="channelPanel" class="hidden h-full flex flex-col md:flex-row gap-4 overflow-hidden">
             <div class="w-full md:w-1/3 flex flex-col overflow-hidden">
-                <button id="btnBack" class="bg-gray-700 p-4 rounded-lg mb-4 font-bold text-yellow-500">← Torna alla Scelta</button>
+                <button id="btnBack" class="bg-gray-700 p-4 rounded-lg mb-4 font-bold text-yellow-500">← Torna al Menu</button>
                 <div class="mb-4">
-                    <label for="filterInput" class="block text-sm font-bold mb-2">Cerca (Tasto rapido: S):</label>
-                    <input type="search" id="filterInput" class="w-full bg-gray-700 p-4 rounded-lg border-2 border-gray-600 focus:border-yellow-500">
+                    <label for="filterInput" class="block text-sm font-bold mb-2">Cerca canale (Tasto S):</label>
+                    <input type="search" id="filterInput" class="w-full bg-gray-700 p-4 rounded-lg border-2 border-gray-600 focus:border-yellow-500 text-white">
                 </div>
                 <ul id="channelList" class="flex-1 space-y-4 overflow-y-auto pr-2" role="list"></ul>
             </div>
@@ -45,7 +45,7 @@
             <div class="w-full md:w-2/3 flex flex-col bg-black rounded-xl relative overflow-hidden">
                 <video id="videoPlayer" controls class="w-full h-full"></video>
                 <div id="statusArea" class="absolute bottom-10 left-6 right-6 bg-black bg-opacity-90 p-5 rounded-lg text-center text-yellow-400 font-bold border-2 border-yellow-600" aria-live="assertive">
-                    Seleziona un canale.
+                    In attesa.
                 </div>
             </div>
         </section>
@@ -60,35 +60,42 @@
         const channelPanel = document.getElementById('channelPanel');
         const summaryText = document.getElementById('summaryText');
 
-        let tvChannels = {}; 
-        let radioChannels = {};
-        let currentData = {};
+        let tvData = {}; 
+        let radioData = {};
+        let currentCollection = {};
         let hlsInstance = null;
-        const proxy1 = "https://corsproxy.io/?";
-        const proxy2 = "https://api.codetabs.com/v1/proxy?quest=";
+        const proxy = "https://corsproxy.io/?";
 
-        // 19 Sorgenti Integrate
+        // TUTTE LE 19 SORGENTI ORIGINALI UNITE
         const m3uSources = [
             { url: "https://davidefulgione.it/tivu.m3u", type: "mixed" },
+            { url: "https://davidefulgione.it/tv.m3u", type: "mixed" },
+            { url: "https://davidefulgione.it/tv-epg.m3u", type: "mixed" },
             { url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/ipradioita.m3u", type: "radio" },
+            { url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvita.m3u", type: "tv" },
+            { url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvitaplus.m3u", type: "tv" },
             { url: "http://tivustream.website/urls/listm3u", type: "tv" },
+            { url: "https://tivustream.website/urls/listm3u", type: "tv" },
+            { url: "https://tivustream.website/urls/tivustreammusic", type: "radio" },
+            { url: "https://tivustream.website/urls/tivustreamsport", type: "tv" },
+            { url: "http://inthemix.altervista.org/tv.m3u", type: "mixed" },
             { url: "https://bit.ly/itatv", type: "tv" },
             { url: "https://iptv-org.github.io/iptv/languages/ita.m3u", type: "tv" },
+            { url: "https://iptv-org.github.io/iptv/index.m3u", type: "mixed" },
+            { url: "https://iptv-org.github.io/iptv/countries/uk.m3u", type: "mixed" },
             { url: "http://www.pandasat.info/iptv/kodi", type: "mixed" },
-            { url: "http://inthemix.altervista.org/tv.m3u", type: "mixed" },
-            { url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvita.m3u", type: "tv" },
             { url: "https://pastebin.com/raw/8GpCCkhf", type: "tv" },
-            { url: "https://pastebin.com/raw/aRYDYSEQ", type: "tv" }
+            { url: "https://pastebin.com/raw/aRYDYSEQ", type: "tv" },
+            { url: "https://pastebin.com/raw/sG5cusFp/.m3u", type: "mixed" }
         ];
 
         async function init() {
             document.getElementById('loadingStatus').textContent = "Caricamento database integrale...";
             for (const s of m3uSources) {
                 try {
-                    const res = await fetch(proxy1 + encodeURIComponent(s.url));
-                    const text = res.ok ? await res.text() : await (await fetch(proxy2 + encodeURIComponent(s.url))).text();
-                    parseM3U(text, s.type);
-                } catch (e) { console.warn("Errore lista"); }
+                    const res = await fetch(proxy + encodeURIComponent(s.url));
+                    if (res.ok) parseM3U(await res.text(), s.type);
+                } catch (e) { console.warn("Lentezza su una sorgente..."); }
             }
             showMenu();
         }
@@ -102,41 +109,38 @@
                     name = line.split(',').pop().trim()
                                .replace(/#EXTINF:.*?,/, "").replace(/\[.*?\]/g, "").trim();
                 } else if (line.startsWith("http") && name) {
-                    // Pulizia titoli decorativi
+                    // Evita solo le righe estetiche (===)
                     if (name.includes("===") || name.includes("---") || name.length < 2) return;
 
-                    const lowerName = name.toLowerCase();
-                    // Logica Radio espansa per includere stazioni italiane senza la parola 'radio'
-                    const isRadioKeyword = lowerName.includes("radio") || lowerName.includes("fm") || 
-                                         lowerName.includes("rds") || lowerName.includes("deejay") || 
-                                         lowerName.includes("105") || lowerName.includes("kiss") || 
-                                         lowerName.includes("m2o") || lowerName.includes("rtl") ||
-                                         lowerName.includes("virgin") || lowerName.includes("subasio");
+                    const lower = name.toLowerCase();
+                    // Logica Radio ampia: se è nella lista radio o ha parole chiave
+                    const isRadio = sourceType === "radio" || 
+                                   ((lower.includes("radio") || lower.includes("fm") || lower.includes("rds") || 
+                                     lower.includes("105") || lower.includes("rtl") || lower.includes("deejay") || 
+                                     lower.includes("m2o") || lower.includes("kiss")) && !lower.includes("tv"));
                     
-                    const isTvKeyword = lowerName.includes("tv") || lowerName.includes("television") || lowerName.includes("hd");
-                    
-                    // Smistamento
-                    const target = (isRadioKeyword && !isTvKeyword) ? radioChannels : tvChannels;
-                    
-                    if (!target[name]) target[name] = [];
-                    if (!target[name].includes(line)) target[name].push(line);
+                    const target = isRadio ? radioData : tvData;
+                    const key = lower.replace(/\s+/g, ''); 
+
+                    if (!target[key]) target[key] = { pretty: name, urls: [] };
+                    if (!target[key].urls.includes(line)) target[key].urls.push(line);
                 }
             });
         }
 
         function showMenu() {
-            const tvNum = Object.keys(tvChannels).length;
-            const rdNum = Object.keys(radioChannels).length;
-            summaryText.textContent = `Caricamento completato. TV: ${tvNum}. Radio: ${rdNum}. (Italiani in cima alla lista)`;
+            const tvNum = Object.keys(tvData).length;
+            const rdNum = Object.keys(radioData).length;
+            summaryText.textContent = `Analisi completata. TV: ${tvNum}. Radio: ${rdNum}. Italiani in cima.`;
             selectionMenu.classList.remove('hidden');
             document.getElementById('loadingStatus').classList.add('hidden');
         }
 
-        document.getElementById('btnTv').onclick = () => openPanel(tvChannels, "Televisione");
-        document.getElementById('btnRadio').onclick = () => openPanel(radioChannels, "Radio");
+        document.getElementById('btnTv').onclick = () => openPanel(tvData);
+        document.getElementById('btnRadio').onclick = () => openPanel(radioData);
 
-        function openPanel(data, label) {
-            currentData = data;
+        function openPanel(data) {
+            currentCollection = data;
             selectionMenu.classList.add('hidden');
             channelPanel.classList.remove('hidden');
             renderChannels();
@@ -148,76 +152,89 @@
             video.pause();
         };
 
+        let currentTimeout;
         function renderChannels(query = "") {
+            clearTimeout(currentTimeout);
             listContainer.innerHTML = "";
-            const keys = Object.keys(currentData);
+            const keys = Object.keys(currentCollection);
             
-            // ORDINAMENTO: Italiani PRIMA, il resto DOPO
-            const sortedKeys = keys.sort((a, b) => {
-                const aIt = isItalian(a);
-                const bIt = isItalian(b);
+            // ORDINAMENTO: Priorità Italia, poi il resto (compresi gli stranieri)
+            const sorted = keys.sort((a, b) => {
+                const nameA = currentCollection[a].pretty;
+                const nameB = currentCollection[b].pretty;
+                const aIt = isItalian(nameA);
+                const bIt = isItalian(nameB);
                 if (aIt && !bIt) return -1;
                 if (!aIt && bIt) return 1;
-                return a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'});
+                return nameA.localeCompare(nameB, undefined, {numeric: true});
             });
 
-            const filtered = sortedKeys.filter(c => c.toLowerCase().includes(query.toLowerCase()));
-
-            filtered.forEach(name => {
-                const li = document.createElement('li');
-                li.className = "channel-card";
-                const btn = document.createElement('button');
-                btn.className = "btn-channel";
-                btn.textContent = name; 
-                btn.onclick = () => autoPlay(name);
-                const copyBtn = document.createElement('button');
-                copyBtn.className = "btn-copy";
-                copyBtn.textContent = `Copia link di ${name}`;
-                copyBtn.onclick = (e) => { e.stopPropagation(); copyLink(currentData[name][0], name); };
-                li.appendChild(btn);
-                li.appendChild(copyBtn);
-                listContainer.appendChild(li);
-            });
+            const filtered = sorted.filter(k => currentCollection[k].pretty.toLowerCase().includes(query.toLowerCase()));
+            
+            let index = 0;
+            function loadChunk() {
+                const chunk = filtered.slice(index, index + 30);
+                chunk.forEach(key => {
+                    const item = currentCollection[key];
+                    const li = document.createElement('li');
+                    li.className = "channel-card";
+                    const btn = document.createElement('button');
+                    btn.className = "btn-channel";
+                    btn.textContent = item.pretty;
+                    btn.onclick = () => autoPlay(item.pretty, item.urls);
+                    const copyBtn = document.createElement('button');
+                    copyBtn.className = "btn-copy";
+                    copyBtn.textContent = `Copia link di ${item.pretty}`;
+                    copyBtn.onclick = (e) => { e.stopPropagation(); copyLink(item.urls[0], item.pretty); };
+                    li.appendChild(btn);
+                    li.appendChild(copyBtn);
+                    listContainer.appendChild(li);
+                });
+                index += 30;
+                if (index < filtered.length) {
+                    currentTimeout = setTimeout(loadChunk, 40); 
+                }
+            }
+            loadChunk();
         }
 
         function isItalian(name) {
             const lower = name.toLowerCase();
-            const itKeywords = ['rai', 'mediaset', 'canale 5', 'italia 1', 'rete 4', 'la7', 'sky', 'italia', 'rtl', 'deejay', 'rds', '105', 'kiss', 'virgin', 'subasio', 'm2o'];
-            return itKeywords.some(key => lower.includes(key));
+            const itKeywords = ['rai', 'mediaset', 'canale 5', 'italia 1', 'rete 4', 'la7', 'sky', 'italia', 'rtl', 'deejay', 'rds', '105', 'nove', 'tv8', '20 mediaset', 'virgin', 'kiss', 'subasio'];
+            return itKeywords.some(k => lower.includes(k));
         }
 
         function copyLink(url, name) {
             navigator.clipboard.writeText(url).then(() => {
-                statusArea.textContent = `Link di ${name} copiato negli appunti.`;
+                statusArea.textContent = `Link di ${name} copiato.`;
             });
         }
 
-        async function autoPlay(name) {
-            const urls = currentData[name];
+        async function autoPlay(name, urls) {
             statusArea.textContent = `Avvio ${name}...`;
             for (let i = 0; i < urls.length; i++) {
                 const success = await tryPlay(urls[i], name);
                 if (success) return;
             }
-            statusArea.textContent = `Segnale assente per ${name}. Copia il link per VLC.`;
+            statusArea.textContent = `Segnale assente. Usa il tasto Copia Link per VLC.`;
         }
 
         function tryPlay(url, name) {
             return new Promise((resolve) => {
                 if (hlsInstance) hlsInstance.destroy();
-                const timeout = setTimeout(() => resolve(false), 7000);
+                const timer = setTimeout(() => resolve(false), 7000);
                 if (url.includes(".m3u8") && Hls.isSupported()) {
                     hlsInstance = new Hls({ manifestLoadingTimeOut: 3000 });
                     hlsInstance.loadSource(url);
                     hlsInstance.attachMedia(video);
                     hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-                        clearTimeout(timeout);
+                        clearTimeout(timer);
                         video.play().then(() => { statusArea.textContent = `In onda: ${name}`; resolve(true); }).catch(() => resolve(false));
                     });
                     hlsInstance.on(Hls.Events.ERROR, () => resolve(false));
                 } else {
                     video.src = url;
-                    video.play().then(() => { clearTimeout(timeout); statusArea.textContent = `In onda: ${name}`; resolve(true); }).catch(() => resolve(false));
+                    video.play().then(() => { clearTimeout(timer); statusArea.textContent = `In onda: ${name}`; resolve(true); }).catch(() => resolve(false));
                 }
             });
         }
