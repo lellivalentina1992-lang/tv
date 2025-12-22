@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TV & Radio Smart Search 2025</title>
+    <title>TV & Radio Smart 2025 - Database Integrale</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         :focus { outline: 5px solid #3b82f6 !important; outline-offset: 4px; }
         .menu-button { background: #1e40af; border: 4px solid #3b82f6; padding: 2.5rem; border-radius: 1.5rem; font-size: 2rem; font-weight: bold; width: 100%; }
-        .channel-card { background-color: #1f2937; border: 2px solid #374151; padding: 0.5rem; border-radius: 12px; margin-bottom: 1rem; display: flex; flex-direction: column; }
-        .btn-channel { width: 100%; text-align: left; background: #2563eb; padding: 1.2rem; border-radius: 8px; font-weight: bold; font-size: 1.2rem; margin-bottom: 5px; }
-        .btn-copy { background: #374151; padding: 0.6rem; border-radius: 6px; font-size: 0.9rem; width: 100%; text-align: center; color: #9ca3af; }
+        .channel-card { background-color: #1f2937; border: 2px solid #374151; padding: 0.5rem; border-radius: 12px; margin-bottom: 1rem; }
+        .btn-channel { width: 100%; text-align: left; background: #2563eb; padding: 1.2rem; border-radius: 8px; font-weight: bold; font-size: 1.3rem; }
+        .btn-copy { background: #374151; padding: 0.8rem; border-radius: 6px; font-size: 1rem; width: 100%; text-align: center; color: #d1d5db; margin-top: 5px; }
         .hidden { display: none; }
     </style>
 </head>
 <body class="h-full flex flex-col font-sans overflow-hidden">
 
     <header class="bg-gray-800 p-4 border-b border-gray-700 shadow-lg text-center">
-        <h1 class="text-2xl font-bold text-yellow-500">Database Canali 2025</h1>
-        <div id="loadingStatus" class="text-sm text-gray-400 mt-1" aria-live="polite">Analisi liste in corso...</div>
+        <h1 class="text-2xl font-bold text-yellow-500">Database Integrale 2025</h1>
+        <div id="loadingStatus" class="text-sm text-gray-400 mt-1" aria-live="polite">Caricamento di tutti i canali...</div>
     </header>
 
     <main class="flex-1 flex flex-col overflow-hidden p-4">
@@ -67,22 +67,28 @@
         const proxy1 = "https://corsproxy.io/?";
         const proxy2 = "https://api.codetabs.com/v1/proxy?quest=";
 
+        // 19 Sorgenti Integrate
         const m3uSources = [
             { url: "https://davidefulgione.it/tivu.m3u", type: "mixed" },
             { url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/ipradioita.m3u", type: "radio" },
             { url: "http://tivustream.website/urls/listm3u", type: "tv" },
             { url: "https://bit.ly/itatv", type: "tv" },
-            { url: "https://iptv-org.github.io/iptv/languages/ita.m3u", type: "tv" }
+            { url: "https://iptv-org.github.io/iptv/languages/ita.m3u", type: "tv" },
+            { url: "http://www.pandasat.info/iptv/kodi", type: "mixed" },
+            { url: "http://inthemix.altervista.org/tv.m3u", type: "mixed" },
+            { url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvita.m3u", type: "tv" },
+            { url: "https://pastebin.com/raw/8GpCCkhf", type: "tv" },
+            { url: "https://pastebin.com/raw/aRYDYSEQ", type: "tv" }
         ];
 
         async function init() {
-            document.getElementById('loadingStatus').textContent = "Organizzazione canali italiani...";
+            document.getElementById('loadingStatus').textContent = "Caricamento database integrale...";
             for (const s of m3uSources) {
                 try {
                     const res = await fetch(proxy1 + encodeURIComponent(s.url));
                     const text = res.ok ? await res.text() : await (await fetch(proxy2 + encodeURIComponent(s.url))).text();
                     parseM3U(text, s.type);
-                } catch (e) { console.warn("Sorgente saltata"); }
+                } catch (e) { console.warn("Errore lista"); }
             }
             showMenu();
         }
@@ -92,22 +98,26 @@
             let name = "";
             lines.forEach(line => {
                 line = line.trim();
-                // Pulizia radicale dei tag M3U
                 if (line.startsWith("#EXTINF:")) {
                     name = line.split(',').pop().trim()
-                               .replace(/#EXTINF:.*?,/, "") // Rimuove residui tag
-                               .replace(/\[.*?\]/g, "")     // Rimuove scritte tra parentesi
-                               .replace(/#EXTINF:-1\./, "") // Rimuove prefissi tecnici russi/bulgari
-                               .trim();
+                               .replace(/#EXTINF:.*?,/, "").replace(/\[.*?\]/g, "").trim();
                 } else if (line.startsWith("http") && name) {
-                    // Scarta i messaggi di aggiornamento o le righe di intestazione
-                    if (name.includes("UPDATE") || name.includes("---") || name.length < 2) return;
+                    // Pulizia titoli decorativi
+                    if (name.includes("===") || name.includes("---") || name.length < 2) return;
 
                     const lowerName = name.toLowerCase();
-                    const isTv = lowerName.includes("tv") || lowerName.includes("television") || sourceType === "tv";
-                    const isRadio = (lowerName.includes("radio") || lowerName.includes("fm") || sourceType === "radio") && !lowerName.includes("tv");
+                    // Logica Radio espansa per includere stazioni italiane senza la parola 'radio'
+                    const isRadioKeyword = lowerName.includes("radio") || lowerName.includes("fm") || 
+                                         lowerName.includes("rds") || lowerName.includes("deejay") || 
+                                         lowerName.includes("105") || lowerName.includes("kiss") || 
+                                         lowerName.includes("m2o") || lowerName.includes("rtl") ||
+                                         lowerName.includes("virgin") || lowerName.includes("subasio");
                     
-                    const target = (isRadio && !isTv) ? radioChannels : tvChannels;
+                    const isTvKeyword = lowerName.includes("tv") || lowerName.includes("television") || lowerName.includes("hd");
+                    
+                    // Smistamento
+                    const target = (isRadioKeyword && !isTvKeyword) ? radioChannels : tvChannels;
+                    
                     if (!target[name]) target[name] = [];
                     if (!target[name].includes(line)) target[name].push(line);
                 }
@@ -117,7 +127,7 @@
         function showMenu() {
             const tvNum = Object.keys(tvChannels).length;
             const rdNum = Object.keys(radioChannels).length;
-            summaryText.textContent = `Analisi completata. TV: ${tvNum}. Radio: ${rdNum}.`;
+            summaryText.textContent = `Caricamento completato. TV: ${tvNum}. Radio: ${rdNum}. (Italiani in cima alla lista)`;
             selectionMenu.classList.remove('hidden');
             document.getElementById('loadingStatus').classList.add('hidden');
         }
@@ -142,13 +152,13 @@
             listContainer.innerHTML = "";
             const keys = Object.keys(currentData);
             
-            // LOGICA DI ORDINAMENTO: Italia prima, poi il resto
+            // ORDINAMENTO: Italiani PRIMA, il resto DOPO
             const sortedKeys = keys.sort((a, b) => {
                 const aIt = isItalian(a);
                 const bIt = isItalian(b);
                 if (aIt && !bIt) return -1;
                 if (!aIt && bIt) return 1;
-                return a.localeCompare(b);
+                return a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'});
             });
 
             const filtered = sortedKeys.filter(c => c.toLowerCase().includes(query.toLowerCase()));
@@ -156,34 +166,29 @@
             filtered.forEach(name => {
                 const li = document.createElement('li');
                 li.className = "channel-card";
-                
-                // Pulsante Canale (Sente subito il nome)
                 const btn = document.createElement('button');
                 btn.className = "btn-channel";
                 btn.textContent = name; 
                 btn.onclick = () => autoPlay(name);
-                
-                // Pulsante Copia separato (Per screen reader dopo il nome)
                 const copyBtn = document.createElement('button');
                 copyBtn.className = "btn-copy";
                 copyBtn.textContent = `Copia link di ${name}`;
                 copyBtn.onclick = (e) => { e.stopPropagation(); copyLink(currentData[name][0], name); };
-
                 li.appendChild(btn);
                 li.appendChild(copyBtn);
                 listContainer.appendChild(li);
             });
         }
 
-        // Funzione per capire se un canale è italiano
         function isItalian(name) {
-            const itKeywords = ['rai', 'mediaset', 'italia', 'sky', 'la7', 'canale 5', 'rtl', 'deejay', 'mhz'];
-            return itKeywords.some(key => name.toLowerCase().includes(key));
+            const lower = name.toLowerCase();
+            const itKeywords = ['rai', 'mediaset', 'canale 5', 'italia 1', 'rete 4', 'la7', 'sky', 'italia', 'rtl', 'deejay', 'rds', '105', 'kiss', 'virgin', 'subasio', 'm2o'];
+            return itKeywords.some(key => lower.includes(key));
         }
 
         function copyLink(url, name) {
             navigator.clipboard.writeText(url).then(() => {
-                statusArea.textContent = `Link di ${name} copiato.`;
+                statusArea.textContent = `Link di ${name} copiato negli appunti.`;
             });
         }
 
@@ -194,7 +199,7 @@
                 const success = await tryPlay(urls[i], name);
                 if (success) return;
             }
-            statusArea.textContent = `Errore. Usa il tasto Copia Link per VLC.`;
+            statusArea.textContent = `Segnale assente per ${name}. Copia il link per VLC.`;
         }
 
         function tryPlay(url, name) {
