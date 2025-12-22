@@ -3,40 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TV Smart Search - Fix Totale</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>TV & Radio Smart Search 2025 - Ultimate</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        :focus { outline: 4px solid #facc15 !important; outline-offset: 2px; }
-        .channel-card { background-color: #1f2937; border: 1px solid #374151; padding: 15px; border-radius: 10px; margin-bottom: 1rem; }
-        .btn-play { background-color: #2563eb; color: white; padding: 12px; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; border: none; margin-bottom: 10px; }
-        .grid-links { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
-        .btn-link { background-color: #374151; border: 1px solid #4b5563; color: white; padding: 8px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; text-align: center; }
-        .btn-link:hover { background-color: #4b5563; }
+        :focus { outline: 5px solid #3b82f6 !important; outline-offset: 4px; }
+        .channel-card { background-color: #1f2937; border: 2px solid #374151; padding: 1.2rem; border-radius: 12px; margin-bottom: 1rem; }
+        .control-button { background-color: #374151; color: white; padding: 1rem; border-radius: 8px; font-weight: bold; width: 100%; border: 1px solid #4b5563; }
+        .control-button:hover, .control-button:focus { background-color: #1e40af; }
     </style>
 </head>
 <body class="h-full flex flex-col font-sans overflow-hidden">
 
-    <header class="bg-gray-800 p-4 border-b border-gray-700 shadow-md">
-        <h1 class="text-xl font-bold text-yellow-500">TV Search 2025 - Versione Corretta</h1>
-        <div id="loadingStatus" class="text-xs text-gray-400 mt-1" aria-live="polite">Avvio...</div>
+    <header class="bg-gray-800 p-4 shadow-lg border-b border-gray-700">
+        <h1 class="text-2xl font-bold text-yellow-500 text-center">TV & Radio Database Totale</h1>
+        <div id="loadingStatus" class="text-sm text-gray-400 text-center mt-1" aria-live="polite">Avvio sistema...</div>
     </header>
 
     <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
-        <section class="w-full md:w-1/3 p-4 bg-gray-800 flex flex-col border-r border-gray-700 overflow-hidden">
+        <section class="w-full md:w-1/3 p-4 bg-gray-800 flex flex-col border-r border-gray-700 overflow-hidden" aria-label="Ricerca">
             <div class="mb-4">
-                <label for="filterInput" class="block text-sm font-bold mb-2">Cerca (Premi 'S'):</label>
-                <input type="search" id="filterInput" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 focus:ring-2 focus:ring-yellow-500" autocomplete="off">
+                <label for="filterInput" class="block text-sm font-bold mb-2">Cerca (S per cercare, Frecce per volume, Spazio per Play):</label>
+                <input type="search" id="filterInput" class="w-full bg-gray-700 text-white p-4 rounded-lg border-2 border-gray-600 focus:border-yellow-500" placeholder="Es: Canale 5, Radio Deejay..." autocomplete="off">
             </div>
-            <div id="channelList" class="flex-1 space-y-4 overflow-y-auto pr-2" role="list"></div>
+            <ul id="channelList" class="flex-1 space-y-4 overflow-y-auto pr-2" role="list"></ul>
         </section>
 
         <section class="w-full md:w-2/3 p-4 flex flex-col bg-gray-900">
             <div class="flex-1 flex items-center justify-center bg-black rounded-xl relative overflow-hidden">
-                <video id="videoPlayer" class="w-full h-full" controls></video>
-                <div id="statusArea" class="absolute bottom-6 left-6 right-6 bg-black bg-opacity-80 p-4 rounded-lg text-center text-yellow-400 font-bold border border-yellow-900" aria-live="assertive">
-                    Pronto.
+                <video id="videoPlayer" controls class="w-full max-h-[60vh] rounded-lg"></video>
+                <div id="statusArea" class="absolute bottom-4 left-4 right-4 bg-black bg-opacity-90 p-4 rounded-lg text-center text-yellow-400 font-bold border border-yellow-800" aria-live="assertive">
+                    Pronto. Usa 'S' per cercare un canale.
                 </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3 mt-6" role="group" aria-label="Controlli">
+                <button id="play-pause-btn" class="control-button">Play/Pausa</button>
+                <button id="vol-down-btn" class="control-button">Vol -</button>
+                <button id="vol-up-btn" class="control-button">Vol +</button>
+            </div>
+
+            <div class="mt-4">
+                <label for="channelUrl" class="block text-xs font-medium text-gray-500 mb-1">Link diretto per VLC:</label>
+                <input type="text" id="channelUrl" readonly class="w-full bg-gray-800 text-blue-400 p-2 rounded border border-gray-700 font-mono text-xs" placeholder="Seleziona un canale...">
             </div>
         </section>
     </main>
@@ -46,33 +55,60 @@
         const listContainer = document.getElementById('channelList');
         const filterInput = document.getElementById('filterInput');
         const statusArea = document.getElementById('statusArea');
+        const channelUrlInput = document.getElementById('channelUrl');
         const loadingStatus = document.getElementById('loadingStatus');
 
         let channels = {}; 
-        let hls = null;
-        const proxy = "https://corsproxy.io/?";
+        let hlsInstance = null;
+        const proxy1 = "https://corsproxy.io/?";
+        const proxy2 = "https://api.codetabs.com/v1/proxy?quest=";
 
+        // TUTTE LE 19 SORGENTI UNITE dai tuoi file
         const m3uSources = [
-            { name: "Fulgione Tivu", url: "http://davidefulgione.it/tivu.m3u" },
-            { name: "IPTV-Org IT", url: "https://iptv-org.github.io/iptv/countries/it.m3u" },
-            { name: "Tundrak IT", url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvita.m3u" },
-            { name: "Bit.ly ITA", url: "https://bit.ly/itatv" }
+            { name: "Fulgione Tivu", url: "https://davidefulgione.it/tivu.m3u" },
+            { name: "TivuStream HTTP", url: "http://tivustream.website/urls/listm3u" },
+            { name: "TivuStream HTTPS", url: "https://tivustream.website/urls/listm3u" },
+            { name: "Tundrak Radio", url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/ipradioita.m3u" },
+            { name: "Tundrak Italia", url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvita.m3u" },
+            { name: "Fulgione Standard", url: "http://davidefulgione.it/tv.m3u" },
+            { name: "Fulgione EPG", url: "http://davidefulgione.it/tv-epg.m3u" },
+            { name: "In The Mix", url: "http://inthemix.altervista.org/tv.m3u" },
+            { name: "Bitly ITA", url: "https://bit.ly/itatv" },
+            { name: "PandaSat", url: "http://www.pandasat.info/iptv/kodi" },
+            { name: "IPTV-Org ITA", url: "https://iptv-org.github.io/iptv/languages/ita.m3u" },
+            { name: "IPTV-Org Global", url: "https://iptv-org.github.io/iptv/index.m3u" },
+            { name: "IPTV-Org UK", url: "https://iptv-org.github.io/iptv/countries/uk.m3u" },
+            { name: "TivuStream Music", url: "https://tivustream.website/urls/tivustreammusic" },
+            { name: "TivuStream Sport", url: "https://tivustream.website/urls/tivustreamsport" },
+            { name: "Pastebin 1", url: "https://pastebin.com/raw/8GpCCkhf" },
+            { name: "Pastebin 2", url: "https://pastebin.com/raw/aRYDYSEQ" },
+            { name: "QDR Forum", url: "https://pastebin.com/raw/sG5cusFp/.m3u" },
+            { name: "Tundrak Plus", url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvitaplus.m3u" }
         ];
 
         function announce(msg) { statusArea.textContent = msg; }
 
-        // Caricamento dati
         async function init() {
-            announce("Caricamento liste...");
+            announce("Caricamento database globale...");
             for (const s of m3uSources) {
                 try {
                     loadingStatus.textContent = `Caricamento ${s.name}...`;
-                    const res = await fetch(proxy + encodeURIComponent(s.url));
-                    if (res.ok) parseM3U(await res.text());
-                } catch (e) { console.warn("Errore caricamento:", s.name); }
+                    let text = "";
+                    try {
+                        const res = await fetch(proxy1 + encodeURIComponent(s.url));
+                        if (res.ok) text = await res.text();
+                        else throw new Error();
+                    } catch {
+                        const res = await fetch(proxy2 + encodeURIComponent(s.url));
+                        if (res.ok) text = await res.text();
+                    }
+                    if (text) parseM3U(text);
+                } catch (e) { console.warn("Sorgente saltata:", s.name); }
             }
             renderChannels();
-            loadingStatus.textContent = `${Object.keys(channels).length} canali trovati.`;
+            const total = Object.keys(channels).length;
+            loadingStatus.textContent = `${total} contenuti caricati.`;
+            announce(`Sistema pronto. Trovati ${total} canali e radio.`);
         }
 
         function parseM3U(data) {
@@ -96,108 +132,69 @@
                 .sort();
 
             filtered.forEach(name => {
-                const urls = channels[name];
-                
-                // Creo l'elemento manualmente per evitare errori di virgolette/token
-                const card = document.createElement('div');
-                card.className = "channel-card";
-                
-                const title = document.createElement('h3');
-                title.className = "font-bold text-yellow-500 mb-2";
-                title.textContent = `${name} (${urls.length})`;
-                
+                const li = document.createElement('li');
+                li.className = "channel-card";
+                const title = document.createElement('h2');
+                title.className = "text-lg font-bold text-yellow-500 mb-2";
+                title.textContent = name;
                 const playBtn = document.createElement('button');
-                playBtn.className = "btn-play";
-                playBtn.textContent = "Riproduci nel Browser";
+                playBtn.className = "w-full bg-blue-600 p-4 rounded-lg font-bold uppercase";
+                playBtn.textContent = `Avvia ${name}`;
                 playBtn.onclick = () => autoPlay(name);
-                
-                const grid = document.createElement('div');
-                grid.className = "grid-links";
-                
-                urls.forEach((url, index) => {
-                    const linkBtn = document.createElement('button');
-                    linkBtn.className = "btn-link";
-                    linkBtn.textContent = `Link ${index + 1}`;
-                    linkBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        copyToClipboard(url, name, index + 1);
-                    };
-                    grid.appendChild(linkBtn);
-                });
-
-                card.appendChild(title);
-                card.appendChild(playBtn);
-                card.appendChild(grid);
-                listContainer.appendChild(card);
-            });
-        }
-
-        // Funzione COPIA migliorata con fallback per contesti non sicuri
-        function copyToClipboard(text, name, num) {
-            if (!navigator.clipboard) {
-                // Fallback se HTTPS non è attivo
-                const textArea = document.createElement("textarea");
-                textArea.value = text;
-                document.body.appendChild(textArea);
-                textArea.select();
-                try {
-                    document.execCommand('copy');
-                    announce(`Link ${num} di ${name} copiato (Fallback)`);
-                } catch (err) {
-                    announce("Errore durante la copia.");
-                }
-                document.body.removeChild(textArea);
-                return;
-            }
-            navigator.clipboard.writeText(text).then(() => {
-                announce(`Link ${num} di ${name} copiato.`);
-            }).catch(() => {
-                announce("Errore nella copia automatica.");
+                li.appendChild(title);
+                li.appendChild(playBtn);
+                listContainer.appendChild(li);
             });
         }
 
         async function autoPlay(name) {
             const urls = channels[name];
+            announce(`Connessione a ${name}...`);
             for (let i = 0; i < urls.length; i++) {
-                announce(`Prova flusso ${i + 1}...`);
                 const success = await tryPlay(urls[i], name);
-                if (success) return;
+                if (success) { channelUrlInput.value = urls[i]; return; }
             }
-            announce("Nessun flusso funzionante. Copia il link.");
+            announce(`Errore: Nessun segnale per ${name}.`);
         }
 
         function tryPlay(url, name) {
             return new Promise((resolve) => {
-                if (hls) hls.destroy();
+                if (hlsInstance) hlsInstance.destroy();
+                const timeout = setTimeout(() => resolve(false), 8000);
                 if (url.includes(".m3u8") && Hls.isSupported()) {
-                    hls = new Hls({ manifestLoadingTimeOut: 4000 });
-                    hls.loadSource(url);
-                    hls.attachMedia(video);
-                    hls.on(Hls.Events.MANIFEST_PARSED, () => { 
-                        video.play().then(() => {
-                            announce(`In onda: ${name}`);
-                            resolve(true);
-                        }).catch(() => resolve(false));
+                    hlsInstance = new Hls({ manifestLoadingTimeOut: 4000 });
+                    hlsInstance.loadSource(url);
+                    hlsInstance.attachMedia(video);
+                    hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+                        clearTimeout(timeout);
+                        video.play().then(() => { announce(`In onda: ${name}`); resolve(true); }).catch(() => resolve(false));
                     });
-                    hls.on(Hls.Events.ERROR, (e, data) => { if (data.fatal) resolve(false); });
+                    hlsInstance.on(Hls.Events.ERROR, () => resolve(false));
                 } else {
                     video.src = url;
-                    video.play().then(() => { 
-                        announce(`In onda: ${name}`); 
-                        resolve(true); 
-                    }).catch(() => resolve(false));
+                    video.play().then(() => { clearTimeout(timeout); announce(`In onda: ${name}`); resolve(true); }).catch(() => resolve(false));
                 }
-                setTimeout(() => resolve(false), 6000);
             });
         }
 
-        // Shortcut tastiera
+        // CONTROLLI TASTIERA DEFINITIVI
         window.addEventListener('keydown', (e) => {
-            if (e.key.toLowerCase() === 's' && document.activeElement !== filterInput) {
-                e.preventDefault();
-                filterInput.focus();
+            if (document.activeElement === filterInput && e.key !== 'Escape') return;
+
+            switch(e.key.toLowerCase()) {
+                case 's': e.preventDefault(); filterInput.focus(); announce("Ricerca"); break;
+                case ' ': e.preventDefault(); 
+                    if (video.paused) { video.play(); announce("Play"); } 
+                    else { video.pause(); announce("Pausa"); } break;
+                case 'arrowup': e.preventDefault(); video.volume = Math.min(1, video.volume + 0.1); announce(`Vol ${Math.round(video.volume*100)}%`); break;
+                case 'arrowdown': e.preventDefault(); video.volume = Math.max(0, video.volume - 0.1); announce(`Vol ${Math.round(video.volume*100)}%`); break;
+                case 'm': e.preventDefault(); video.muted = !video.muted; announce(video.muted ? "Muto" : "Audio attivo"); break;
             }
         });
+
+        document.getElementById('play-pause-btn').onclick = () => video.paused ? video.play() : video.pause();
+        document.getElementById('vol-up-btn').onclick = () => { video.volume = Math.min(1, video.volume + 0.1); announce(`Vol ${Math.round(video.volume*100)}%`); };
+        document.getElementById('vol-down-btn').onclick = () => { video.volume = Math.max(0, video.volume - 0.1); announce(`Vol ${Math.round(video.volume*100)}%`); };
 
         filterInput.addEventListener('input', (e) => renderChannels(e.target.value));
         init();
