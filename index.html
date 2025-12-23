@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
+        /* Focus ultra-visibile per accessibilità */
         :focus { outline: 6px solid #fbbf24 !important; background-color: #1e40af !important; }
         .btn-ctrl { flex: 1 1 45%; min-height: 100px; font-weight: bold; font-size: 1.5rem; border-radius: 20px; border: 4px solid #4b5563; }
         .btn-channel { width: 100%; text-align: left; background: #374151; padding: 1.8rem; border-radius: 15px; font-weight: bold; font-size: 1.8rem; border: 3px solid #4b5563; margin-bottom: 1rem; }
@@ -28,15 +29,15 @@
         <div class="flex-1 flex flex-col md:flex-row gap-4 overflow-hidden">
             <div class="w-full md:w-1/3 flex flex-col overflow-hidden">
                 <ul id="channelList" class="flex-1 overflow-y-auto pr-2" role="listbox">
-                    <li class="p-4 text-gray-400 text-2xl">Caricamento liste...</li>
+                    <li class="p-4 text-gray-400 text-2xl">Caricamento database in corso...</li>
                 </ul>
             </div>
 
             <div class="w-full md:w-2/3 bg-gray-900 rounded-3xl flex flex-col border-4 border-gray-800">
-                <video id="videoPlayer" class="w-full bg-black rounded-t-3xl" style="height: 20vh;" crossorigin="anonymous"></video>
+                <video id="videoPlayer" class="w-full bg-black rounded-t-3xl" style="height: 25vh;" crossorigin="anonymous"></video>
                 
                 <div id="statusArea" class="p-4 bg-gray-800 text-yellow-400 font-bold text-center text-2xl border-y-2 border-gray-700" aria-live="polite">
-                    Seleziona un canale per iniziare.
+                    In attesa di inizializzazione...
                 </div>
 
                 <div class="p-2 flex flex-wrap gap-2 overflow-y-auto bg-gray-900">
@@ -67,36 +68,53 @@
         let audioCtx, source, gainNode;
         let isBoosted = false;
 
-        const proxy = "https://corsproxy.io/?";
+        // Proxy stabile per bypassare i blocchi CORS
+        const proxy = "https://api.allorigins.win/raw?url=";
 
         async function init() {
-            announce("Inizializzazione database.");
+            announce("Inizializzazione di tutte le liste. Caricamento in corso.");
             
-            // FIX LAZIO STYLE RADIO + MEDIASET STABILI
+            // 1. Canali Manuali (sempre disponibili subito)
             const manualChannels = [
-                { pretty: 'Lazio Style Radio', urls: ['https://sslazio.fluidstream.eu/sslazio.mp3', 'https://ice02.fluidstream.net/radiosei.mp3'], type: 'RADIO' },
-                { pretty: 'Canale 5 HD', urls: ['https://live3.mediaset.it/Content/hls_h0_clr_vos/live/channel(ch)/index.m3u8'], type: 'TV' },
-                { pretty: 'Italia 1 HD', urls: ['https://live3.mediaset.it/Content/hls_h0_clr_vos/live/channel(ci)/index.m3u8'], type: 'TV' }
+                { pretty: 'Lazio Style Radio', urls: ['https://sslazio.fluidstream.eu/sslazio.mp3'], type: 'RADIO' },
+                { pretty: 'Canale 5 HD', urls: ['https://live3-mediaset-it.akamaized.net/Content/hls_h0_clr_vos/live/channel(ch)/index.m3u8'], type: 'TV' },
+                { pretty: 'Italia 1 HD', urls: ['https://live3-mediaset-it.akamaized.net/Content/hls_h0_clr_vos/live/channel(ci)/index.m3u8'], type: 'TV' },
+                { pretty: 'Rete 4 HD', urls: ['https://live3-mediaset-it.akamaized.net/Content/hls_h0_clr_vos/live/channel(c4)/index.m3u8'], type: 'TV' }
             ];
             
             manualChannels.forEach(ch => {
                 allChannels.push({ key: ch.pretty.toLowerCase().replace(/\s+/g,''), pretty: ch.pretty, urls: ch.urls, type: ch.type });
             });
+            renderList("");
 
-            // Liste aggiornate (aggiunta Tundrak per stabilità nazionali)
+            // 2. Tutte le 12 Sorgenti (Tua lista + Preset di Tv.html)
             const m3uSources = [
                 "https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u",
+                "http://inthemix.altervista.org/tv.m3u",
+                "https://tivustream.website/urls/listm3u",
+                "https://pastebin.com/raw/8GpCCkhf",
+                "https://pastebin.com/raw/aRYDYSEQ",
+                "https://bit.ly/itatv",
+                "https://iptv-org.github.io/iptv/languages/ita.m3u",
+                "https://pastebin.com/raw/sG5cusFp/.m3u",
+                "http://www.pandasat.info/iptv/kodi",
                 "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvita.m3u",
                 "https://raw.githubusercontent.com/iptv-org/iptv/master/streams/it.m3u"
             ];
 
-            for (let src of m3uSources) {
+            // Caricamento asincrono parallelo
+            m3uSources.forEach(async (src) => {
                 try {
                     const res = await fetch(proxy + encodeURIComponent(src));
-                    if (res.ok) parseM3U(await res.text());
-                } catch (e) { console.warn("Sorgente lenta:", src); }
-            }
-            renderList("");
+                    if (res.ok) {
+                        const data = await res.text();
+                        parseM3U(data);
+                        renderList(mainSearch.value);
+                    }
+                } catch (e) { console.warn("Sorgente non raggiungibile:", src); }
+            });
+            
+            statusArea.textContent = "Database pronto. Scegli un canale.";
         }
 
         function parseM3U(data) {
@@ -110,9 +128,13 @@
                     const cleanName = name.replace(/\[.*?\]/g, "").trim();
                     const isRadio = cleanName.toLowerCase().includes("radio") || line.endsWith(".mp3");
                     let key = cleanName.toLowerCase().replace(/\s+/g, '');
+                    
                     let existing = allChannels.find(c => c.key === key);
-                    if (existing) { if (!existing.urls.includes(line)) existing.urls.push(line); }
-                    else { allChannels.push({ key, pretty: cleanName, urls: [line], type: isRadio ? "RADIO" : "TV" }); }
+                    if (existing) {
+                        if (!existing.urls.includes(line)) existing.urls.push(line);
+                    } else {
+                        allChannels.push({ key, pretty: cleanName, urls: [line], type: isRadio ? "RADIO" : "TV" });
+                    }
                     name = ""; 
                 }
             });
@@ -122,7 +144,7 @@
             listContainer.innerHTML = "";
             const filtered = allChannels
                 .filter(c => c.pretty.toLowerCase().includes(query.toLowerCase()))
-                .sort((a, b) => a.pretty.localeCompare(b.pretty)).slice(0, 40);
+                .sort((a, b) => a.pretty.localeCompare(b.pretty)).slice(0, 100);
 
             filtered.forEach((ch) => {
                 const li = document.createElement('li');
@@ -132,6 +154,44 @@
                 btn.onclick = () => autoPlay(ch.pretty, ch.urls);
                 li.appendChild(btn);
                 listContainer.appendChild(li);
+            });
+        }
+
+        async function autoPlay(name, urls) {
+            setupAudio();
+            statusArea.textContent = `Connessione a ${name}...`;
+            announce(`Provo a caricare ${name}`);
+
+            for (let url of urls) {
+                // Se un link fallisce, il ciclo passa automaticamente al prossimo url nella lista
+                const targetUrl = (url.includes("mediaset") || url.startsWith("http://")) ? proxy + encodeURIComponent(url) : url;
+                const success = await tryPlay(targetUrl);
+                if (success) {
+                    currentUrl = url;
+                    statusArea.textContent = `In onda: ${name}`;
+                    announce(`Riproduzione avviata.`);
+                    return;
+                }
+            }
+            statusArea.textContent = "Errore: Canale non disponibile in nessuna lista.";
+            announce("Errore di caricamento su tutti i link.");
+        }
+
+        function tryPlay(url) {
+            return new Promise((resolve) => {
+                if (hlsInstance) hlsInstance.destroy();
+                const timer = setTimeout(() => resolve(false), 10000); // Timeout 10 secondi
+
+                if (url.includes(".m3u8")) {
+                    if (Hls.isSupported()) {
+                        hlsInstance = new Hls(); hlsInstance.loadSource(url); hlsInstance.attachMedia(video);
+                        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { clearTimeout(timer); video.play().then(() => resolve(true)).catch(() => resolve(false)); });
+                        hlsInstance.on(Hls.Events.ERROR, (e, data) => { if(data.fatal) resolve(false); });
+                    }
+                } else {
+                    video.src = url;
+                    video.play().then(() => { clearTimeout(timer); resolve(true); }).catch(() => resolve(false));
+                }
             });
         }
 
@@ -145,48 +205,19 @@
             }
         }
 
-        async function autoPlay(name, urls) {
-            setupAudio();
-            statusArea.textContent = `Caricamento ${name}...`;
-            for (let url of urls) {
-                // Se il link è HTTP o di Mediaset, usiamo il proxy per sicurezza
-                const targetUrl = (url.includes("mediaset") || !url.startsWith("https")) ? proxy + encodeURIComponent(url) : url;
-                const success = await tryPlay(targetUrl, name);
-                if (success) { currentUrl = url; announce("In onda " + name); return; }
-            }
-            statusArea.textContent = "Errore: Canale non disponibile.";
-            announce("Errore di caricamento.");
-        }
-
-        function tryPlay(url, name) {
-            return new Promise((resolve) => {
-                if (hlsInstance) hlsInstance.destroy();
-                const timer = setTimeout(() => resolve(false), 8000);
-                if (url.includes(".m3u8")) {
-                    if (Hls.isSupported()) {
-                        hlsInstance = new Hls(); hlsInstance.loadSource(url); hlsInstance.attachMedia(video);
-                        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { clearTimeout(timer); video.play().then(() => resolve(true)).catch(() => resolve(false)); });
-                    }
-                } else {
-                    video.src = url;
-                    video.play().then(() => { clearTimeout(timer); resolve(true); }).catch(() => resolve(false));
-                }
-            });
-        }
-
         function announce(msg) { srAnnouncer.textContent = ""; setTimeout(() => srAnnouncer.textContent = msg, 100); }
 
         window.onkeydown = (e) => {
             if (!e.ctrlKey) return;
             const k = e.key.toLowerCase();
-            if (k === 's') { e.preventDefault(); mainSearch.focus(); announce("Ricerca."); }
+            if (k === 's') { e.preventDefault(); mainSearch.focus(); announce("Ricerca attiva."); }
             if (k === 'b') { e.preventDefault(); 
                 setupAudio(); isBoosted = !isBoosted;
                 gainNode.gain.value = isBoosted ? 4.0 : 1.0;
                 boostBtn.classList.toggle('boost-active', isBoosted);
-                announce(isBoosted ? "Boost 400%" : "Boost spento");
+                announce(isBoosted ? "Boost 400% attivo" : "Boost normale");
             }
-            if (k === 'c') { e.preventDefault(); navigator.clipboard.writeText(currentUrl); announce("Copiato."); }
+            if (k === 'c') { e.preventDefault(); navigator.clipboard.writeText(currentUrl); announce("Link copiato."); }
         };
 
         document.getElementById('play-pause-btn').onclick = () => video.paused ? video.play() : video.pause();
@@ -194,7 +225,7 @@
         document.getElementById('copy-btn').onclick = () => window.dispatchEvent(new KeyboardEvent('keydown', {key: 'c', ctrlKey: true}));
         document.getElementById('vol-up-btn').onclick = () => { video.volume = Math.min(1, video.volume + 0.1); announce("Volume " + Math.round(video.volume*100)); };
         document.getElementById('vol-down-btn').onclick = () => { video.volume = Math.max(0, video.volume - 0.1); announce("Volume " + Math.round(video.volume*100)); };
-        document.getElementById('reset-btn').onclick = () => { mainSearch.value = ""; renderList(""); mainSearch.focus(); announce("Cerca svuotato."); };
+        document.getElementById('reset-btn').onclick = () => { mainSearch.value = ""; renderList(""); mainSearch.focus(); announce("Filtro rimosso."); };
         mainSearch.oninput = (e) => renderList(e.target.value);
 
         init();
