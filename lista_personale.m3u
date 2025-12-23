@@ -1,121 +1,37 @@
 #EXTM3U
 
 # --- SEZIONE 1: NAZIONALI E NEWS (STABILI) ---
-#EXTINF:-1, [NAZIONALE] Rai 1 HD
-https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=2606
-#EXTINF:-1, [NAZIONALE] Rai 2 HD
-https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=308716
-#EXTINF:-1, [NAZIONALE] Rai 3 HD
-https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=308709
-#EXTINF:-1, [NAZIONALE] Canale 5 HD
-https://live3.mediaset.it/Content/hls_h0_clr_vos/live/channel(ch)/index.m3u8
-#EXTINF:-1, [NAZIONALE] Italia 1 HD
-https://live3.mediaset.it/Content/hls_h0_clr_vos/live/channel(ci)/index.m3u8
-#EXTINF:-1, [NAZIONALE] Rete 4 HD
-https://live3.mediaset.it/Content/hls_h0_clr_vos/live/channel(c4)/index.m3u8
-#EXTINF:-1, [NAZIONALE] NOVE
-https://ddit-nove-prod.akamaized.net/playlist.m3u8
-#EXTINF:-1, [NAZIONALE] Real Time
-https://ddit-realtime-prod.akamaized.net/playlist.m3u8
-#EXTINF:-1, [NAZIONALE] LA7
+#EXTINF:-1,Rai 1
+https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=2606803&output=7&forceUserAgent=libcurl
+#EXTINF:-1,Rai 2
+https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=308718&output=7&forceUserAgent=libcurl
+#EXTINF:-1,Rai 3
+https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=308719&output=7&forceUserAgent=libcurl
+#EXTINF:-1,Rai News 24
+https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=1&output=7&forceUserAgent=libcurl
+#EXTINF:-1,Rai Storia
+https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=746990&output=7&forceUserAgent=libcurl
+#EXTINF:-1,Rai YoYo
+https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=746899&output=7&forceUserAgent=libcurl
+#EXTINF:-1,Cielo
+https://cielotvitalia2-lh.akamaihd.net/i/cielotvitalia2_1@129027/master.m3u8
+#EXTINF:-1,TGCOM24
+https://live3-mediaset-it.akamaized.net/content/hls_clr_xo/Live/channel(chid=103)/index.m3u8
+#EXTINF:-1,LA7
 https://cdn.la7.it/live/la7/master.m3u8
 
-# --- SEZIONE 2: LAZIO INTEGRALE ---
-#EXTINF:-1, [LAZIO] Lazio Style Radio (Ufficiale)
+# --- SEZIONE 2: LAZIO / ROMA (EXTRA) ---
+#EXTINF:-1,Lazio Style Radio
 https://sslazio.fluidstream.eu/sslazio.mp3
-#EXTINF:-1, [LAZIO] Radio Sei (Lazio Sport Backup)
-https://ice02.fluidstream.net/radiosei.mp3
-#EXTINF:-1, [LAZIO] Teleroma 56
-https://streaming.softwarecreation.it/Teleroma56/Teleroma56/playlist.m3u8
-#EXTINF:-1, [LAZIO] Gold TV
-https://streaming.softwarecreation.it/GoldTv/GoldTv/playlist.m3u8
-#EXTINF:-1, [LAZIO] Rete Oro
-https://streaming.softwarecreation.it/ReteOro/ReteOro/playlist.m3u8
-#EXTINF:-1, [LAZIO] Canale 10 HD
-https://streaming.softwarecreation.it/Canale10/Canale10/playlist.m3u8
-#EXTINF:-1, [LAZIO] Teleuniverso
-https://stream.cp.ets-sistemi.it:1936/teleuniverso/teleuniverso/playlist.m3u8
-#EXTINF:-1, [LAZIO] Lazio TV
-https://streaming.softwarecreation.it/LazioTv/LazioTv/playlist.m3u8
-#EXTINF:-1, [LAZIO] T9
-https://streaming.softwarecreation.it/T9/T9/playlist.m3u8
-#EXTINF:-1, [LAZIO] Radio Roma Television
-https://5926fc9c7c5b2.streamlock.net/rtfeunawfu/rtfeunawfu/playlist.m3u8
-#EXTINF:-1, [LAZIO] TGR Rai Lazio
-https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=tgr_lazio
+#EXTINF:-1,Radiosei (Lazio)
+https://shoutcast.lazionews.eu:8000/radiosei
+#EXTINF:-1,Retesole Lazio
+https://wms.shared.streamshow.it/retesole/retesole/playlist.m3u8
+#EXTINF:-1,Tele Roma Uno
+https://59d7d6f47d7fc.streamlock.net/teleromauno/teleromauno/playlist.m3u8
+#EXTINF:-1,Tele Lazio Nord
+https://ms.shared.streamshow.it/telelazionord/telelazionord/playlist.m3u8
 
-# --- SEZIONE 3: SPORT ---
-#EXTINF:-1, [SPORT] Rai Sport HD
-https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=358071
-#EXTINF:-1, [SPORT] Radio TV Serie A con RDS
-https://rds-social-video.thron.com/live-video/video/ngrp:video/playlist.m3u8
-#EXTINF:-1, [SPORT] Sportitalia HD
-https://uvotv-aniview.global.ssl.fastly.net/10010/live/hls/sportitalia/playlist.m3u8
-#EXTINF:-1, [SPORT] Supertennis HD
-https://live-embed.supertennix.hiway.media/restreamer/supertennix_client/gpu-a-c0-16/restreamer/outgest/h24_supertennix/manifest.m3u8
-#EXTINF:-1, [SPORT] ACI Sport TV
-https://webstream.multistream.it/memfs/e2cb3629-c1a2-495b-b43a-9eb386f04ed8.m3u8
-
-# --- SEZIONE 4: CULTURA E STORIA ---
-#EXTINF:-1, [CULTURA] Rai Storia
-https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=54
-#EXTINF:-1, [CULTURA] Rai Radio Techetè
-http://icestreaming.rai.it:80/10.mp3
-#EXTINF:-1, [CULTURA] Uninettuno University TV
-https://932y4273djv8-hls-live.mariatvcdn.it/uninettunotv/uninettunotv/playlist.m3u8
-#EXTINF:-1, [CULTURA] Rai 5
-https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=395276
-
-# --- SEZIONE 5: REGIONALI NORD E CENTRO ---
-#EXTINF:-1, [LOMBARDIA] Telelombardia
-http://mediapason-lh.akamaihd.net/i/telelombardia_1@396529/master.m3u8
-#EXTINF:-1, [PIEMONTE] Telecupole
-https://5cbd3bc28341f.streamlock.net:444/cupole/live/playlist.m3u8
-#EXTINF:-1, [VENETO] Antenna 3 Veneto
-https://59d8c0cee6f3d.streamlock.net/antennatreveneto/antennatreveneto.stream/playlist.m3u8
-#EXTINF:-1, [LIGURIA] Primocanale
-http://msh0203.stream.seeweb.it/live/stream1.sdp/playlist.m3u8
-#EXTINF:-1, [TOSCANA] RTV38
-http://splive-lh.akamaihd.net/i/livertv38_1@396529/master.m3u8
-#EXTINF:-1, [EMILIA] Radio Bruno TV
-http://msh0209.stream.seeweb.it:1935/live/stream02.sdp/playlist.m3u8
-#EXTINF:-1, [UMBRIA] Umbria TV
-http://flash2.bsnewline.com:1935/umbriatv/umbriatv/playlist.m3u8
-
-# --- SEZIONE 6: REGIONALI SUD E ISOLE ---
-#EXTINF:-1, [PUGLIA] Telebari
-https://6118c66e94966.streamlock.net/telebari/live/playlist.m3u8
-#EXTINF:-1, [CAMPANIA] Telecapri
-https://6118c66e94966.streamlock.net/telecapri/live/playlist.m3u8
-#EXTINF:-1, [SICILIA] Antenna Sicilia
-https://streaming.softwarecreation.it/AntennaSicilia/AntennaSicilia/playlist.m3u8
-#EXTINF:-1, [SARDEGNA] Videolina
-https://6118c66e94966.streamlock.net/videolina/live/playlist.m3u8
-
-# --- SEZIONE 7: BAMBINI E RAGAZZI ---
-#EXTINF:-1, [KIDS] Rai YoYo
-https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=yoyo
-#EXTINF:-1, [KIDS] Super!
-https://super-it-fast.amagi.tv/index.m3u8
-#EXTINF:-1, [KIDS] K2
-https://ddit-k2-prod.akamaized.net/playlist.m3u8
-#EXTINF:-1, [KIDS] Winx Club
-https://plutotv-it-winx-club-it.p.v-it.cache.m3u8
-
-# --- SEZIONE 8: RADIO ---
-#EXTINF:-1, [RADIO] Radio 24
-http://shoutcast.radio24.it:8000/listen.mp3
-#EXTINF:-1, [RADIO] Radio Radicale
-http://icecast.radioradicale.it/radio-radicale.mp3
-#EXTINF:-1, [RADIO] Radio Sportiva
-https://ice08.fluidstream.net/radiosportiva.mp3
-#EXTINF:-1, [RADIO] Radio Popolare Milano
-https://stream.radiopopolare.it/radiopop.mp3
-#EXTINF:-1, [RADIO] Rai Radio 3
-http://icestreaming.rai.it/3.mp3
-
-# --- SEZIONE 9: SHOPPING E ASTE ---
-#EXTINF:-1, [SHOPPING] QVC Italia
-https://qvc-it-fast.amagi.tv/index.m3u8
-#EXTINF:-1, [ASTE] Arte Network
-http://wms.shared.streamshow.it/artenetwork/artenetwork/playlist.m3u8
+# --- SEZIONE 3: VARI (RETE) ---
+#EXTINF:-1,Arte Network
+https://ms.shared.streamshow.it/artenetwork/artenetwork/playlist.m3u8
