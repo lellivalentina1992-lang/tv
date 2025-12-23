@@ -3,56 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TV & Radio Integrale - Universal Access</title>
+    <title>TV/Radio ULTRA - Fix 2025</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         :focus { outline: 6px solid #fbbf24 !important; background-color: #1e40af !important; }
-        .btn-ctrl { flex: 1 1 45%; min-height: 80px; font-weight: bold; font-size: 1.2rem; border-radius: 15px; border: 2px solid #4b5563; }
+        .btn-ctrl { flex: 1 1 45%; min-height: 85px; font-weight: bold; font-size: 1.3rem; border-radius: 15px; border: 3px solid #4b5563; }
         .btn-channel { width: 100%; text-align: left; background: #374151; padding: 1.5rem; border-radius: 12px; font-weight: bold; font-size: 1.5rem; border: 3px solid #4b5563; margin-bottom: 0.8rem; }
-        .tag-tipo { background: #111827; padding: 4px 10px; border-radius: 6px; margin-right: 12px; color: #fbbf24; border: 1px solid #fbbf24; }
         .boost-on { background-color: #dc2626 !important; border-color: #fca5a5 !important; }
     </style>
 </head>
 <body class="h-full flex flex-col font-sans overflow-hidden bg-black">
 
-    <header class="bg-gray-800 p-3 border-b border-gray-700 text-center">
-        <h1 class="text-xl font-bold text-yellow-500">Database TV/Radio - Accesso Totale</h1>
-    </header>
-
     <main class="flex-1 flex flex-col p-2 overflow-hidden">
         
         <section class="mb-4">
-            <label for="mainSearch" class="block text-lg font-bold mb-2 text-yellow-500">Cerca Canale (Ctrl+S):</label>
-            <div class="flex gap-2">
-                <input type="search" id="mainSearch" 
-                       class="flex-1 bg-gray-800 p-4 rounded-xl border-2 border-blue-600 text-white text-2xl" 
-                       placeholder="Es: Lazio..." autocomplete="off">
-                <button id="clear-btn" class="bg-gray-700 p-4 rounded-xl font-bold" aria-label="Cancella ricerca">X</button>
-            </div>
+            <label for="mainSearch" class="block text-xl font-bold mb-2 text-yellow-500">Cerca (Ctrl+S):</label>
+            <input type="search" id="mainSearch" 
+                   class="w-full bg-gray-800 p-5 rounded-xl border-4 border-blue-600 text-white text-3xl" 
+                   placeholder="Scrivi qui..." autocomplete="off">
         </section>
 
         <div class="flex-1 flex flex-col md:flex-row gap-4 overflow-hidden">
             <div class="w-full md:w-1/3 flex flex-col overflow-hidden">
-                <ul id="channelList" class="flex-1 overflow-y-auto" role="listbox" aria-label="Risultati ricerca">
-                    <li class="p-4 text-gray-400">Caricamento in corso...</li>
+                <ul id="channelList" class="flex-1 overflow-y-auto" role="listbox">
+                    <li class="p-4 text-gray-400">Caricamento database...</li>
                 </ul>
             </div>
 
-            <div class="w-full md:w-2/3 bg-gray-900 rounded-2xl flex flex-col border-2 border-gray-700">
-                <video id="videoPlayer" class="w-full bg-black rounded-t-2xl" style="max-height: 30vh;" crossorigin="anonymous"></video>
+            <div class="w-full md:w-2/3 bg-gray-900 rounded-2xl flex flex-col border-4 border-gray-800">
+                <video id="videoPlayer" class="w-full bg-black rounded-t-2xl" style="height: 25vh;" crossorigin="anonymous"></video>
                 
-                <div id="statusArea" class="p-3 bg-gray-800 text-yellow-400 font-bold text-center text-lg border-y border-gray-700" aria-live="polite">
-                    Seleziona un canale.
+                <div id="statusArea" class="p-3 bg-gray-800 text-yellow-400 font-bold text-center text-xl border-y-2 border-gray-700" aria-live="polite">
+                    In attesa.
                 </div>
 
                 <div class="p-2 flex flex-wrap gap-2 overflow-y-auto">
                     <button id="play-pause-btn" class="btn-ctrl bg-blue-700">Play / Pausa</button>
                     <button id="boost-btn" class="btn-ctrl bg-purple-800">Boost (Ctrl+B)</button>
-                    <button id="copy-btn" class="btn-ctrl bg-green-800">Copia Link (Ctrl+C)</button>
-                    <button id="focus-search-btn" class="btn-ctrl bg-orange-700">Vai a Cerca</button>
-                    <button id="vol-up-btn" class="btn-ctrl bg-gray-700">Volume +</button>
-                    <button id="vol-down-btn" class="btn-ctrl bg-gray-700">Volume -</button>
+                    <button id="copy-btn" class="btn-ctrl bg-green-800">Copia (Ctrl+C)</button>
+                    <button id="vol-up-btn" class="btn-ctrl bg-gray-700">Vol +</button>
+                    <button id="vol-down-btn" class="btn-ctrl bg-gray-700">Vol -</button>
+                    <button id="focus-search-btn" class="btn-ctrl bg-orange-700">Nuova Cerca</button>
                 </div>
 
                 <div id="sr-announcer" class="sr-only" aria-live="assertive"></div>
@@ -74,25 +66,33 @@
         let audioCtx, source, gainNode;
         let isBoosted = false;
 
+        // Proxy robusto per saltare i blocchi HTTPS/CORS
         const proxy = "https://corsproxy.io/?";
 
-        // Sorgenti M3U incluse quelle aggiuntive
-        const m3uSources = [
-            { url: "https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u" },
-            { url: "https://raw.githubusercontent.com/iptv-org/iptv/master/streams/it.m3u" },
-            { url: "https://www.fm-world.it/playlist/fmworld.m3u" }
-        ];
-
         async function init() {
-            announce("Inizializzazione database. Attendere.");
-            // Link prioritario Lazio Style
-            allChannels.push({ key: 'laziostyleradio', pretty: 'Lazio Style Radio', urls: ['https://sslazio.fluidstream.eu/sslazio.mp3'], type: 'RADIO' });
+            announce("Caricamento in corso.");
+            
+            // AGGIUNTA MANUALE FIXATA PER LAZIO STYLE (LINK 2025)
+            allChannels.push({ 
+                key: 'laziostyleradio', 
+                pretty: 'Lazio Style Radio', 
+                urls: [
+                    "https://ice02.fluidstream.net/radiosei.mp3", // Backup stabile
+                    "http://shoutcast.fluidstream.it:7020/;stream.mp3" 
+                ], 
+                type: 'RADIO' 
+            });
 
-            for (const s of m3uSources) {
+            const sources = [
+                "https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u",
+                "https://raw.githubusercontent.com/iptv-org/iptv/master/streams/it.m3u"
+            ];
+
+            for (let s of sources) {
                 try {
-                    const res = await fetch(proxy + encodeURIComponent(s.url));
+                    const res = await fetch(proxy + encodeURIComponent(s));
                     if (res.ok) parseM3U(await res.text());
-                } catch (e) {}
+                } catch (e) { console.error("Errore sorgente:", s); }
             }
             renderList("");
             announce("Database pronto.");
@@ -107,7 +107,7 @@
                     name = line.split(',').pop().trim();
                 } else if (line.startsWith("http") && name) {
                     const cleanName = name.replace(/\[.*?\]/g, "").trim();
-                    const isRadio = cleanName.toLowerCase().includes("radio") || line.endsWith(".mp3");
+                    const isRadio = cleanName.toLowerCase().includes("radio") || line.toLowerCase().includes(".mp3");
                     let key = cleanName.toLowerCase().replace(/\s+/g, '');
                     let existing = allChannels.find(c => c.key === key);
                     if (existing) { if (!existing.urls.includes(line)) existing.urls.push(line); }
@@ -144,34 +144,42 @@
             }
         }
 
-        function toggleBoost() {
-            setupAudio();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            isBoosted = !isBoosted;
-            gainNode.gain.value = isBoosted ? 2.8 : 1.0;
-            boostBtn.classList.toggle('boost-on', isBoosted);
-            const msg = isBoosted ? "Boost Attivo 280%" : "Boost Disattivato";
-            announce(msg);
-            statusArea.textContent = msg;
-        }
-
         async function autoPlay(name, urls) {
             setupAudio();
-            statusArea.textContent = `Caricamento ${name}...`;
+            statusArea.textContent = `Avvio ${name}...`;
             for (let url of urls) {
-                const success = await tryPlay(url, name);
-                if (success) { currentUrl = url; announce("In riproduzione: " + name); return; }
+                // APPLICHIAMO IL PROXY A TUTTI I LINK NON HTTPS O BLOCCATI
+                let finalUrl = url;
+                if (!url.startsWith("https") || url.includes("fluidstream")) {
+                    finalUrl = proxy + encodeURIComponent(url);
+                }
+                
+                const success = await tryPlay(finalUrl, name);
+                if (success) { 
+                    currentUrl = url; 
+                    announce("In onda: " + name); 
+                    return; 
+                }
             }
-            announce("Errore: Canale non disponibile.");
+            statusArea.textContent = "Errore: segnale interrotto.";
+            announce("Errore di connessione.");
         }
 
         function tryPlay(url, name) {
             return new Promise((resolve) => {
                 if (hlsInstance) hlsInstance.destroy();
-                const timer = setTimeout(() => resolve(false), 7000);
-                if (url.includes(".m3u8") && Hls.isSupported()) {
-                    hlsInstance = new Hls(); hlsInstance.loadSource(url); hlsInstance.attachMedia(video);
-                    hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { clearTimeout(timer); video.play().then(() => resolve(true)).catch(() => resolve(false)); });
+                const timer = setTimeout(() => resolve(false), 8000);
+                
+                if (url.includes(".m3u8")) {
+                    if (Hls.isSupported()) {
+                        hlsInstance = new Hls();
+                        hlsInstance.loadSource(url);
+                        hlsInstance.attachMedia(video);
+                        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+                            clearTimeout(timer);
+                            video.play().then(() => resolve(true)).catch(() => resolve(false));
+                        });
+                    }
                 } else {
                     video.src = url;
                     video.play().then(() => { clearTimeout(timer); resolve(true); }).catch(() => resolve(false));
@@ -179,34 +187,30 @@
             });
         }
 
-        function copyLink() {
-            if (currentUrl) {
-                navigator.clipboard.writeText(currentUrl);
-                announce("Link copiato negli appunti.");
-            } else {
-                announce("Nessun link disponibile.");
-            }
-        }
-
         function announce(msg) { srAnnouncer.textContent = ""; setTimeout(() => srAnnouncer.textContent = msg, 100); }
 
-        // GESTIONE TASTI RAPIDI CON CTRL
+        // Scorciatoie con CTRL
         window.onkeydown = (e) => {
-            if (!e.ctrlKey) return; 
+            if (!e.ctrlKey) return;
             const k = e.key.toLowerCase();
-            if (k === 's') { e.preventDefault(); mainSearch.focus(); announce("Ricerca focalizzata."); }
-            if (k === 'b') { e.preventDefault(); toggleBoost(); }
-            if (k === 'c') { e.preventDefault(); copyLink(); }
+            if (k === 's') { e.preventDefault(); mainSearch.focus(); announce("Cerca."); }
+            if (k === 'b') { e.preventDefault(); 
+                setupAudio();
+                isBoosted = !isBoosted;
+                gainNode.gain.value = isBoosted ? 3.0 : 1.0;
+                boostBtn.classList.toggle('boost-on', isBoosted);
+                announce(isBoosted ? "Boost 300%" : "Boost spento");
+            }
+            if (k === 'c') { e.preventDefault(); navigator.clipboard.writeText(currentUrl); announce("Copiato."); }
         };
 
-        // Eventi Pulsanti
-        document.getElementById('clear-btn').onclick = () => { mainSearch.value = ""; renderList(""); mainSearch.focus(); };
-        document.getElementById('focus-search-btn').onclick = () => { mainSearch.focus(); announce("Inserisci nome canale."); };
+        // Pulsanti
         document.getElementById('play-pause-btn').onclick = () => video.paused ? video.play() : video.pause();
-        document.getElementById('boost-btn').onclick = toggleBoost;
-        document.getElementById('copy-btn').onclick = copyLink;
+        document.getElementById('boost-btn').onclick = () => window.dispatchEvent(new KeyboardEvent('keydown', {key: 'b', ctrlKey: true}));
+        document.getElementById('copy-btn').onclick = () => window.dispatchEvent(new KeyboardEvent('keydown', {key: 'c', ctrlKey: true}));
         document.getElementById('vol-up-btn').onclick = () => { video.volume = Math.min(1, video.volume + 0.1); announce("Volume " + Math.round(video.volume*100)); };
         document.getElementById('vol-down-btn').onclick = () => { video.volume = Math.max(0, video.volume - 0.1); announce("Volume " + Math.round(video.volume*100)); };
+        document.getElementById('focus-search-btn').onclick = () => { mainSearch.focus(); mainSearch.value = ""; renderList(""); };
         mainSearch.oninput = (e) => renderList(e.target.value);
 
         init();
