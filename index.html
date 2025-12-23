@@ -3,52 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TV & Radio Integrale 2025</title>
+    <title>TV & Radio Integrale PRO 2025</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         :focus { outline: 5px solid #3b82f6 !important; outline-offset: 4px; }
-        .menu-button { background: #1e40af; border: 4px solid #3b82f6; padding: 2.5rem; border-radius: 1.5rem; font-size: 2rem; font-weight: bold; width: 100%; text-align: center; }
+        .control-button { background-color: #374151; color: white; padding: 1rem; border-radius: 0.75rem; font-weight: bold; font-size: 1.1rem; border: 2px solid #4b5563; flex: 1; min-width: 120px; }
+        .control-button:hover, .control-button:focus { background-color: #1e40af; border-color: #3b82f6; }
         .channel-card { background-color: #1f2937; border: 2px solid #374151; padding: 0.5rem; border-radius: 12px; margin-bottom: 0.8rem; }
-        .btn-channel { width: 100%; text-align: left; background: #2563eb; padding: 1.2rem; border-radius: 8px; font-weight: bold; font-size: 1.3rem; }
-        .tag-tipo { font-size: 0.8rem; background: #111827; padding: 2px 6px; border-radius: 4px; margin-right: 8px; color: #fbbf24; }
+        .btn-channel { width: 100%; text-align: left; background: #2563eb; padding: 1.2rem; border-radius: 8px; font-weight: bold; font-size: 1.4rem; }
+        .tag-tipo { font-size: 0.9rem; background: #111827; padding: 3px 8px; border-radius: 4px; margin-right: 10px; color: #fbbf24; border: 1px solid #fbbf24; }
         .hidden { display: none; }
     </style>
 </head>
 <body class="h-full flex flex-col font-sans overflow-hidden">
 
     <header class="bg-gray-800 p-4 border-b border-gray-700 text-center">
-        <h1 class="text-2xl font-bold text-yellow-500">Database Integrale</h1>
-        <div id="loadingStatus" class="text-sm text-gray-400 mt-1" aria-live="polite">Caricamento in corso...</div>
+        <h1 class="text-2xl font-bold text-yellow-500">Database Integrale PRO</h1>
+        <div id="loadingStatus" class="text-sm text-gray-400 mt-1" aria-live="polite">Sincronizzazione di 7 liste in corso...</div>
     </header>
 
     <main class="flex-1 flex flex-col overflow-hidden p-4">
         
-        <section id="selectionMenu" class="h-full flex flex-col justify-center items-center space-y-6">
-            <h2 id="summaryText" class="text-xl font-bold text-gray-300 text-center" aria-live="assertive">Inizializzazione...</h2>
+        <section id="selectionMenu" class="h-full flex flex-col justify-start items-center space-y-6 pt-6">
+            <h2 id="summaryText" class="text-xl font-bold text-gray-300 text-center" aria-live="assertive">Ricerca canali...</h2>
             
-            <div class="w-full max-w-md">
-                <label for="mainSearch" class="block text-sm font-bold mb-2">Cerca in tutto il database (Tasto S):</label>
-                <input type="search" id="mainSearch" class="w-full bg-gray-700 p-4 rounded-lg border-2 border-yellow-500 text-white text-xl" placeholder="Scrivi nome canale...">
+            <div class="w-full max-w-2xl">
+                <label for="mainSearch" class="block text-lg font-bold mb-3 text-yellow-500">Cerca ovunque (Tasto S):</label>
+                <input type="search" id="mainSearch" class="w-full bg-gray-800 p-5 rounded-xl border-4 border-blue-600 text-white text-2xl" placeholder="Cerca tra oltre 400 canali...">
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-2xl">
-                <button id="btnTv" class="menu-button">VEDI TV</button>
-                <button id="btnRadio" class="menu-button">ASCOLTA RADIO</button>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
+                <button id="btnTv" class="bg-blue-800 p-8 rounded-2xl text-2xl font-bold border-4 border-blue-500">TELEVISIONE</button>
+                <button id="btnRadio" class="bg-green-800 p-8 rounded-2xl text-2xl font-bold border-4 border-green-500">RADIOFONIA</button>
             </div>
         </section>
 
         <section id="channelPanel" class="hidden h-full flex flex-col md:flex-row gap-4 overflow-hidden">
             <div class="w-full md:w-1/3 flex flex-col overflow-hidden">
-                <button id="btnBack" class="bg-gray-700 p-4 rounded-lg mb-4 font-bold text-yellow-500">← Torna al Menu</button>
+                <button id="btnBack" class="bg-gray-700 p-4 rounded-lg mb-4 font-bold text-yellow-500 text-xl">← TORNA ALLA RICERCA</button>
                 <ul id="channelList" class="flex-1 space-y-4 overflow-y-auto pr-2" role="list"></ul>
             </div>
 
-            <div class="w-full md:w-2/3 flex flex-col bg-black rounded-xl relative overflow-hidden">
-                <video id="videoPlayer" controls class="w-full h-full"></video>
-                <div id="statusArea" class="absolute bottom-10 left-6 right-6 bg-black bg-opacity-90 p-5 rounded-lg text-center text-yellow-400 font-bold border-2 border-yellow-600" aria-live="assertive">
-                    In attesa.
+            <div class="w-full md:w-2/3 flex flex-col bg-black rounded-2xl relative overflow-hidden">
+                <video id="videoPlayer" class="w-full h-full bg-black"></video>
+                <div id="statusArea" class="absolute top-4 left-4 right-4 bg-black bg-opacity-80 p-4 rounded-lg text-center text-yellow-400 font-bold text-xl border border-yellow-600" aria-live="assertive">
+                    Seleziona un canale.
                 </div>
+                <div class="p-4 bg-gray-800 border-t border-gray-700 flex flex-wrap gap-3 justify-center">
+                    <button id="play-pause-btn" class="control-button">Play / Pausa</button>
+                    <button id="vol-down-btn" class="control-button">Volume -</button>
+                    <button id="vol-up-btn" class="control-button">Volume +</button>
+                    <button id="mute-btn" class="control-button">Muto</button>
+                </div>
+                <div id="sr-announcer" class="sr-only" aria-live="polite"></div>
             </div>
         </section>
     </main>
@@ -58,19 +66,25 @@
         const listContainer = document.getElementById('channelList');
         const mainSearch = document.getElementById('mainSearch');
         const statusArea = document.getElementById('statusArea');
+        const srAnnouncer = document.getElementById('sr-announcer');
         const selectionMenu = document.getElementById('selectionMenu');
         const channelPanel = document.getElementById('channelPanel');
         const summaryText = document.getElementById('summaryText');
 
-        let allChannels = []; // Database unico per la ricerca globale
+        let allChannels = []; 
+        let totalLinksFound = 0;
         let hlsInstance = null;
         const proxy = "https://corsproxy.io/?";
 
-        // ELENCO SORGENTI (Incluso il tuo link GitHub)
+        // TUTTE LE TUE SORGENTI UNIFICATE (Le 3 stabili + le tue 4 richieste)
         const m3uSources = [
             { url: "https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u", type: "mixed" },
             { url: "https://davidefulgione.it/tivu.m3u", type: "mixed" },
-            { url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvita.m3u", type: "tv" }
+            { url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvita.m3u", type: "tv" },
+            { url: "http://inthemix.altervista.org/tv.m3u", type: "tv" },
+            { url: "https://tivustream.website/urls/listm3u", type: "tv" },
+            { url: "http://www.pandasat.info/iptv/kodi", type: "tv" },
+            { url: "https://iptv-org.github.io/iptv/languages/ita.m3u", type: "tv" }
         ];
 
         async function init() {
@@ -78,7 +92,7 @@
                 try {
                     const res = await fetch(proxy + encodeURIComponent(s.url));
                     if (res.ok) parseM3U(await res.text());
-                } catch (e) { console.error("Errore sorgente."); }
+                } catch (e) { console.warn("Sorgente lenta o non disponibile."); }
             }
             showMenu();
         }
@@ -91,19 +105,16 @@
                 if (line.startsWith("#EXTINF:")) {
                     name = line.split(',').pop().trim().replace(/\[.*?\]/g, "").trim();
                 } else if (line.startsWith("http") && name) {
+                    totalLinksFound++;
                     const lowerName = name.toLowerCase();
-                    const isRadio = lowerName.includes("radio") || line.endsWith(".mp3") || lowerName.includes("zeta") || lowerName.includes("rds");
+                    const isRadio = lowerName.includes("radio") || lowerName.includes("fm") || line.endsWith(".mp3") || lowerName.includes("zeta") || lowerName.includes("rds");
                     
-                    // Verifico se il canale esiste già per aggiungere l'URL ai duplicati
-                    let existing = allChannels.find(c => c.pretty.toLowerCase() === lowerName);
+                    let key = lowerName.replace(/\s+/g, '');
+                    let existing = allChannels.find(c => c.key === key);
                     if (existing) {
                         if (!existing.urls.includes(line)) existing.urls.push(line);
                     } else {
-                        allChannels.push({
-                            pretty: name,
-                            urls: [line],
-                            type: isRadio ? "RADIO" : "TV"
-                        });
+                        allChannels.push({ key, pretty: name, urls: [line], type: isRadio ? "RADIO" : "TV" });
                     }
                 }
             });
@@ -112,18 +123,24 @@
         function showMenu() {
             const tvCount = allChannels.filter(c => c.type === "TV").length;
             const radioCount = allChannels.filter(c => c.type === "RADIO").length;
-            summaryText.textContent = `Database Integrale: ${tvCount} TV e ${radioCount} Radio caricate.`;
+            summaryText.textContent = `Database PRO: ${allChannels.length} canali unici su ${totalLinksFound} fonti totali. TV: ${tvCount}, Radio: ${radioCount}.`;
             document.getElementById('loadingStatus').classList.add('hidden');
         }
 
-        // Navigazione
+        // CONTROLLI VIDEO ACCESSIBILI
+        document.getElementById('play-pause-btn').onclick = () => {
+            if (video.paused) { video.play(); announce("Riproduzione"); }
+            else { video.pause(); announce("Pausa"); }
+        };
+        document.getElementById('vol-up-btn').onclick = () => { video.volume = Math.min(1, video.volume + 0.1); announce(`Volume ${Math.round(video.volume*100)}%`); };
+        document.getElementById('vol-down-btn').onclick = () => { video.volume = Math.max(0, video.volume - 0.1); announce(`Volume ${Math.round(video.volume*100)}%`); };
+        document.getElementById('mute-btn').onclick = () => { video.muted = !video.muted; announce(video.muted ? "Muto" : "Audio attivo"); };
+
+        function announce(msg) { srAnnouncer.textContent = ""; setTimeout(() => srAnnouncer.textContent = msg, 50); }
+
         document.getElementById('btnTv').onclick = () => openPanel("TV");
         document.getElementById('btnRadio').onclick = () => openPanel("RADIO");
-        document.getElementById('btnBack').onclick = () => {
-            channelPanel.classList.add('hidden');
-            selectionMenu.classList.remove('hidden');
-            video.pause();
-        };
+        document.getElementById('btnBack').onclick = () => { channelPanel.classList.add('hidden'); selectionMenu.classList.remove('hidden'); video.pause(); };
 
         function openPanel(filterType, query = "") {
             selectionMenu.classList.add('hidden');
@@ -133,51 +150,36 @@
 
         function renderList(filterType, query = "") {
             listContainer.innerHTML = "";
-            let filtered = allChannels;
-            
-            // Se c'è una query, cerca ovunque. Altrimenti filtra per tipo (TV o RADIO)
-            if (query) {
-                filtered = allChannels.filter(c => c.pretty.toLowerCase().includes(query.toLowerCase()));
-            } else {
-                filtered = allChannels.filter(c => c.type === filterType);
-            }
-
+            let filtered = (query) ? allChannels.filter(c => c.pretty.toLowerCase().includes(query.toLowerCase())) : allChannels.filter(c => c.type === filterType);
             filtered.sort((a, b) => a.pretty.localeCompare(b.pretty)).forEach(ch => {
                 const li = document.createElement('li');
                 li.className = "channel-card";
                 const btn = document.createElement('button');
                 btn.className = "btn-channel";
-                btn.innerHTML = `<span class="tag-tipo">${ch.type}</span> ${ch.pretty}`;
+                btn.innerHTML = `<span class="tag-tipo">${ch.type}</span> ${ch.pretty} <small class="text-xs block text-gray-400">(${ch.urls.length} fonti)</small>`;
                 btn.onclick = () => autoPlay(ch.pretty, ch.urls);
                 li.appendChild(btn);
                 listContainer.appendChild(li);
             });
-            
-            if (filtered.length > 0) listContainer.querySelector('button').focus();
         }
 
         async function autoPlay(name, urls) {
-            statusArea.textContent = `Connessione a ${name}...`;
-            for (let url of urls) {
+            statusArea.textContent = `Avvio ${name}...`;
+            for (let [index, url] of urls.entries()) {
+                announce(`Fonte ${index + 1} di ${urls.length}`);
                 const success = await tryPlay(url, name);
                 if (success) return;
             }
-            statusArea.textContent = `Nessun link funzionante per ${name}.`;
+            statusArea.textContent = `Nessun segnale per ${name}.`;
         }
 
         function tryPlay(url, name) {
             return new Promise((resolve) => {
                 if (hlsInstance) hlsInstance.destroy();
                 const timer = setTimeout(() => resolve(false), 8000);
-                
                 if (url.includes(".m3u8") && Hls.isSupported()) {
-                    hlsInstance = new Hls();
-                    hlsInstance.loadSource(url);
-                    hlsInstance.attachMedia(video);
-                    hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-                        clearTimeout(timer);
-                        video.play().then(() => { statusArea.textContent = `In onda: ${name}`; resolve(true); }).catch(() => resolve(false));
-                    });
+                    hlsInstance = new Hls(); hlsInstance.loadSource(url); hlsInstance.attachMedia(video);
+                    hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { clearTimeout(timer); video.play().then(() => { statusArea.textContent = `In onda: ${name}`; resolve(true); }).catch(() => resolve(false)); });
                 } else {
                     video.src = url;
                     video.play().then(() => { clearTimeout(timer); statusArea.textContent = `In onda: ${name}`; resolve(true); }).catch(() => resolve(false));
@@ -185,24 +187,15 @@
             });
         }
 
-        // Gestione tasto S per la ricerca universale
         window.addEventListener('keydown', (e) => {
             if (e.key.toLowerCase() === 's' && document.activeElement !== mainSearch) {
                 e.preventDefault();
-                if (channelPanel.classList.contains('hidden')) {
-                    mainSearch.focus();
-                } else {
-                    document.getElementById('btnBack').click();
-                    setTimeout(() => mainSearch.focus(), 100);
-                }
+                document.getElementById('btnBack').click();
+                mainSearch.focus();
             }
         });
 
-        mainSearch.addEventListener('input', (e) => {
-            if (e.target.value.length > 1) {
-                openPanel("ALL", e.target.value);
-            }
-        });
+        mainSearch.addEventListener('input', (e) => { if (e.target.value.length > 1) openPanel("ALL", e.target.value); });
 
         init();
     </script>
