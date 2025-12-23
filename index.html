@@ -3,52 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TV Integrale - Ricerca Precisa</title>
+    <title>TV & Radio Integrale - Universal Access</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        :focus { outline: 5px solid #fbbf24 !important; background-color: #1e40af !important; }
+        :focus { outline: 6px solid #fbbf24 !important; background-color: #1e40af !important; }
+        .btn-ctrl { flex: 1 1 45%; min-height: 80px; font-weight: bold; font-size: 1.2rem; border-radius: 15px; border: 2px solid #4b5563; }
         .btn-channel { width: 100%; text-align: left; background: #374151; padding: 1.5rem; border-radius: 12px; font-weight: bold; font-size: 1.5rem; border: 3px solid #4b5563; margin-bottom: 0.8rem; }
         .tag-tipo { background: #111827; padding: 4px 10px; border-radius: 6px; margin-right: 12px; color: #fbbf24; border: 1px solid #fbbf24; }
-        .hidden { display: none; }
+        .boost-on { background-color: #dc2626 !important; border-color: #fca5a5 !important; }
     </style>
 </head>
 <body class="h-full flex flex-col font-sans overflow-hidden bg-black">
 
-    <header class="bg-gray-800 p-4 border-b border-gray-700 text-center">
-        <h1 class="text-2xl font-bold text-yellow-500">Database ULTRA - Solo Canali Reali</h1>
+    <header class="bg-gray-800 p-3 border-b border-gray-700 text-center">
+        <h1 class="text-xl font-bold text-yellow-500">Database TV/Radio - Accesso Totale</h1>
     </header>
 
-    <main class="flex-1 flex flex-col p-4 overflow-hidden">
+    <main class="flex-1 flex flex-col p-2 overflow-hidden">
         
-        <section class="mb-6">
-            <label for="mainSearch" class="block text-xl font-bold mb-3 text-yellow-500">Scrivi il nome del canale (es: Lazio):</label>
-            <input type="search" id="mainSearch" 
-                   class="w-full bg-gray-800 p-6 rounded-2xl border-4 border-blue-600 text-white text-3xl focus:border-yellow-500" 
-                   placeholder="Cerca qui..."
-                   autocomplete="off">
-            <div id="searchFeedback" class="sr-only" aria-live="assertive"></div>
+        <section class="mb-4">
+            <label for="mainSearch" class="block text-lg font-bold mb-2 text-yellow-500">Cerca Canale (Ctrl+S):</label>
+            <div class="flex gap-2">
+                <input type="search" id="mainSearch" 
+                       class="flex-1 bg-gray-800 p-4 rounded-xl border-2 border-blue-600 text-white text-2xl" 
+                       placeholder="Es: Lazio..." autocomplete="off">
+                <button id="clear-btn" class="bg-gray-700 p-4 rounded-xl font-bold" aria-label="Cancella ricerca">X</button>
+            </div>
         </section>
 
         <div class="flex-1 flex flex-col md:flex-row gap-4 overflow-hidden">
             <div class="w-full md:w-1/3 flex flex-col overflow-hidden">
-                <h2 id="listHeader" class="text-lg font-bold text-gray-400 mb-2">Risultati:</h2>
-                <ul id="channelList" class="flex-1 overflow-y-auto pr-2" role="listbox">
-                    <li class="p-4 text-gray-500 text-xl">Scrivi qualcosa sopra per iniziare...</li>
+                <ul id="channelList" class="flex-1 overflow-y-auto" role="listbox" aria-label="Risultati ricerca">
+                    <li class="p-4 text-gray-400">Caricamento in corso...</li>
                 </ul>
             </div>
 
-            <div class="w-full md:w-2/3 bg-black rounded-3xl relative flex flex-col border-4 border-gray-800">
-                <video id="videoPlayer" class="flex-1 w-full rounded-t-2xl bg-black"></video>
-                <div id="statusArea" class="p-4 bg-gray-800 text-yellow-400 font-bold text-center text-xl border-t-2 border-gray-700" aria-live="polite">
-                    In attesa di selezione.
+            <div class="w-full md:w-2/3 bg-gray-900 rounded-2xl flex flex-col border-2 border-gray-700">
+                <video id="videoPlayer" class="w-full bg-black rounded-t-2xl" style="max-height: 30vh;" crossorigin="anonymous"></video>
+                
+                <div id="statusArea" class="p-3 bg-gray-800 text-yellow-400 font-bold text-center text-lg border-y border-gray-700" aria-live="polite">
+                    Seleziona un canale.
                 </div>
-                <div class="p-4 bg-gray-900 flex justify-center gap-4">
-                    <button id="play-pause-btn" class="bg-blue-700 p-5 rounded-xl font-bold text-xl">Play/Pausa</button>
-                    <button id="vol-down-btn" class="bg-gray-700 p-5 rounded-xl font-bold text-xl">Vol -</button>
-                    <button id="vol-up-btn" class="bg-gray-700 p-5 rounded-xl font-bold text-xl">Vol +</button>
+
+                <div class="p-2 flex flex-wrap gap-2 overflow-y-auto">
+                    <button id="play-pause-btn" class="btn-ctrl bg-blue-700">Play / Pausa</button>
+                    <button id="boost-btn" class="btn-ctrl bg-purple-800">Boost (Ctrl+B)</button>
+                    <button id="copy-btn" class="btn-ctrl bg-green-800">Copia Link (Ctrl+C)</button>
+                    <button id="focus-search-btn" class="btn-ctrl bg-orange-700">Vai a Cerca</button>
+                    <button id="vol-up-btn" class="btn-ctrl bg-gray-700">Volume +</button>
+                    <button id="vol-down-btn" class="btn-ctrl bg-gray-700">Volume -</button>
                 </div>
-                <div id="sr-announcer" class="sr-only" aria-live="polite"></div>
+
+                <div id="sr-announcer" class="sr-only" aria-live="assertive"></div>
             </div>
         </div>
     </main>
@@ -57,31 +64,38 @@
         const video = document.getElementById('videoPlayer');
         const listContainer = document.getElementById('channelList');
         const mainSearch = document.getElementById('mainSearch');
-        const searchFeedback = document.getElementById('searchFeedback');
         const statusArea = document.getElementById('statusArea');
         const srAnnouncer = document.getElementById('sr-announcer');
+        const boostBtn = document.getElementById('boost-btn');
 
         let allChannels = []; 
+        let currentUrl = "";
         let hlsInstance = null;
+        let audioCtx, source, gainNode;
+        let isBoosted = false;
+
         const proxy = "https://corsproxy.io/?";
 
+        // Sorgenti M3U incluse quelle aggiuntive
         const m3uSources = [
-            { url: "https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u", type: "mixed" },
-            { url: "https://davidefulgione.it/tivu.m3u", type: "mixed" },
-            { url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvita.m3u", type: "tv" },
-            { url: "http://inthemix.altervista.org/tv.m3u", type: "tv" },
-            { url: "https://tivustream.website/urls/listm3u", type: "tv" },
-            { url: "http://www.pandasat.info/iptv/kodi", type: "tv" }
+            { url: "https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u" },
+            { url: "https://raw.githubusercontent.com/iptv-org/iptv/master/streams/it.m3u" },
+            { url: "https://www.fm-world.it/playlist/fmworld.m3u" }
         ];
 
         async function init() {
+            announce("Inizializzazione database. Attendere.");
+            // Link prioritario Lazio Style
+            allChannels.push({ key: 'laziostyleradio', pretty: 'Lazio Style Radio', urls: ['https://sslazio.fluidstream.eu/sslazio.mp3'], type: 'RADIO' });
+
             for (const s of m3uSources) {
                 try {
                     const res = await fetch(proxy + encodeURIComponent(s.url));
                     if (res.ok) parseM3U(await res.text());
-                } catch (e) { console.warn("Sorgente ignorata."); }
+                } catch (e) {}
             }
-            searchFeedback.textContent = "Database pronto. Digita per cercare.";
+            renderList("");
+            announce("Database pronto.");
         }
 
         function parseM3U(data) {
@@ -92,22 +106,12 @@
                 if (line.startsWith("#EXTINF:")) {
                     name = line.split(',').pop().trim();
                 } else if (line.startsWith("http") && name) {
-                    // FILTRO AGGRESSIVO: Elimina titoli spazzatura (===, ---, |, UPDATE)
-                    if (name.includes("===") || name.includes("---") || name.toLowerCase().includes("update") || name.includes("|")) return;
-
                     const cleanName = name.replace(/\[.*?\]/g, "").trim();
-                    if (cleanName.length < 2) return;
-
-                    const lowerName = cleanName.toLowerCase();
-                    const isRadio = lowerName.includes("radio") || lowerName.includes("fm") || line.endsWith(".mp3");
-                    
-                    let key = lowerName.replace(/\s+/g, '');
+                    const isRadio = cleanName.toLowerCase().includes("radio") || line.endsWith(".mp3");
+                    let key = cleanName.toLowerCase().replace(/\s+/g, '');
                     let existing = allChannels.find(c => c.key === key);
-                    if (existing) {
-                        if (!existing.urls.includes(line)) existing.urls.push(line);
-                    } else {
-                        allChannels.push({ key, pretty: cleanName, urls: [line], type: isRadio ? "RADIO" : "TV" });
-                    }
+                    if (existing) { if (!existing.urls.includes(line)) existing.urls.push(line); }
+                    else { allChannels.push({ key, pretty: cleanName, urls: [line], type: isRadio ? "RADIO" : "TV" }); }
                     name = ""; 
                 }
             });
@@ -115,57 +119,50 @@
 
         function renderList(query) {
             listContainer.innerHTML = "";
-            if (!query || query.length < 2) {
-                listContainer.innerHTML = '<li class="p-4 text-gray-500 text-xl">Scrivi almeno 2 lettere...</li>';
-                return;
-            }
-
             const filtered = allChannels
                 .filter(c => c.pretty.toLowerCase().includes(query.toLowerCase()))
-                .sort((a, b) => a.pretty.localeCompare(b.pretty));
-
-            searchFeedback.textContent = `Trovati ${filtered.length} risultati per ${query}. Premi freccia giù.`;
-
-            if (filtered.length === 0) {
-                listContainer.innerHTML = '<li class="p-4 text-red-500 text-xl">Nessun canale trovato.</li>';
-                return;
-            }
+                .sort((a, b) => a.pretty.localeCompare(b.pretty)).slice(0, 30);
 
             filtered.forEach((ch) => {
                 const li = document.createElement('li');
                 const btn = document.createElement('button');
                 btn.className = "btn-channel";
-                btn.setAttribute('role', 'option');
                 btn.innerHTML = `<span class="tag-tipo">${ch.type}</span> ${ch.pretty}`;
-                
-                // Navigazione frecce dentro la lista
-                btn.onkeydown = (e) => {
-                    if (e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        const next = li.nextElementSibling?.querySelector('button');
-                        if (next) next.focus();
-                    } else if (e.key === 'ArrowUp') {
-                        e.preventDefault();
-                        const prev = li.previousElementSibling?.querySelector('button');
-                        if (prev) prev.focus();
-                        else mainSearch.focus();
-                    }
-                };
-
                 btn.onclick = () => autoPlay(ch.pretty, ch.urls);
                 li.appendChild(btn);
                 listContainer.appendChild(li);
             });
         }
 
-        async function autoPlay(name, urls) {
-            statusArea.textContent = `Connessione a ${name}...`;
-            for (let [index, url] of urls.entries()) {
-                announce(`Fonte ${index + 1} di ${urls.length}`);
-                const success = await tryPlay(url, name);
-                if (success) return;
+        function setupAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                source = audioCtx.createMediaElementSource(video);
+                gainNode = audioCtx.createGain();
+                source.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
             }
-            statusArea.textContent = `Canale ${name} non disponibile.`;
+        }
+
+        function toggleBoost() {
+            setupAudio();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            isBoosted = !isBoosted;
+            gainNode.gain.value = isBoosted ? 2.8 : 1.0;
+            boostBtn.classList.toggle('boost-on', isBoosted);
+            const msg = isBoosted ? "Boost Attivo 280%" : "Boost Disattivato";
+            announce(msg);
+            statusArea.textContent = msg;
+        }
+
+        async function autoPlay(name, urls) {
+            setupAudio();
+            statusArea.textContent = `Caricamento ${name}...`;
+            for (let url of urls) {
+                const success = await tryPlay(url, name);
+                if (success) { currentUrl = url; announce("In riproduzione: " + name); return; }
+            }
+            announce("Errore: Canale non disponibile.");
         }
 
         function tryPlay(url, name) {
@@ -174,40 +171,43 @@
                 const timer = setTimeout(() => resolve(false), 7000);
                 if (url.includes(".m3u8") && Hls.isSupported()) {
                     hlsInstance = new Hls(); hlsInstance.loadSource(url); hlsInstance.attachMedia(video);
-                    hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { clearTimeout(timer); video.play().then(() => { statusArea.textContent = `In onda: ${name}`; resolve(true); }).catch(() => resolve(false)); });
+                    hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { clearTimeout(timer); video.play().then(() => resolve(true)).catch(() => resolve(false)); });
                 } else {
                     video.src = url;
-                    video.play().then(() => { clearTimeout(timer); statusArea.textContent = `In onda: ${name}`; resolve(true); }).catch(() => resolve(false));
+                    video.play().then(() => { clearTimeout(timer); resolve(true); }).catch(() => resolve(false));
                 }
             });
         }
 
-        function announce(msg) { srAnnouncer.textContent = ""; setTimeout(() => srAnnouncer.textContent = msg, 50); }
-
-        // Gestione Frecce dalla ricerca
-        mainSearch.onkeydown = (e) => {
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                const firstBtn = listContainer.querySelector('button');
-                if (firstBtn) firstBtn.focus();
+        function copyLink() {
+            if (currentUrl) {
+                navigator.clipboard.writeText(currentUrl);
+                announce("Link copiato negli appunti.");
+            } else {
+                announce("Nessun link disponibile.");
             }
-        };
+        }
 
-        mainSearch.oninput = (e) => renderList(e.target.value);
+        function announce(msg) { srAnnouncer.textContent = ""; setTimeout(() => srAnnouncer.textContent = msg, 100); }
 
-        // Tasto S per tornare alla ricerca
+        // GESTIONE TASTI RAPIDI CON CTRL
         window.onkeydown = (e) => {
-            if (e.key.toLowerCase() === 's' && document.activeElement !== mainSearch) {
-                e.preventDefault();
-                mainSearch.focus();
-                mainSearch.value = "";
-                renderList("");
-            }
+            if (!e.ctrlKey) return; 
+            const k = e.key.toLowerCase();
+            if (k === 's') { e.preventDefault(); mainSearch.focus(); announce("Ricerca focalizzata."); }
+            if (k === 'b') { e.preventDefault(); toggleBoost(); }
+            if (k === 'c') { e.preventDefault(); copyLink(); }
         };
 
+        // Eventi Pulsanti
+        document.getElementById('clear-btn').onclick = () => { mainSearch.value = ""; renderList(""); mainSearch.focus(); };
+        document.getElementById('focus-search-btn').onclick = () => { mainSearch.focus(); announce("Inserisci nome canale."); };
         document.getElementById('play-pause-btn').onclick = () => video.paused ? video.play() : video.pause();
-        document.getElementById('vol-up-btn').onclick = () => video.volume = Math.min(1, video.volume + 0.1);
-        document.getElementById('vol-down-btn').onclick = () => video.volume = Math.max(0, video.volume - 0.1);
+        document.getElementById('boost-btn').onclick = toggleBoost;
+        document.getElementById('copy-btn').onclick = copyLink;
+        document.getElementById('vol-up-btn').onclick = () => { video.volume = Math.min(1, video.volume + 0.1); announce("Volume " + Math.round(video.volume*100)); };
+        document.getElementById('vol-down-btn').onclick = () => { video.volume = Math.max(0, video.volume - 0.1); announce("Volume " + Math.round(video.volume*100)); };
+        mainSearch.oninput = (e) => renderList(e.target.value);
 
         init();
     </script>
