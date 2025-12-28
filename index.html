@@ -3,41 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TV/Radio ULTRA - Accesso Totale</title>
+  <title>TV/Radio ULTRA - Sistema Protetto 42944</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
   <style>
-    /* Focus ultra-visibile per navigazione da tastiera */
+    /* Focus ultra-visibile ottimizzato per navigazione assistita */
     :focus {
       outline: 8px solid #fbbf24 !important;
       outline-offset: 4px;
       background-color: #1e40af !important;
     }
-    .btn-ctrl { flex: 1 1 45%; min-height: 80px; font-weight: bold; font-size: 1.4rem; border-radius: 15px; }
+    .btn-ctrl { flex: 1 1 30%; min-height: 80px; font-weight: bold; font-size: 1.2rem; border-radius: 15px; transition: all 0.2s; }
     .btn-channel {
       width: 100%;
       text-align: left;
       background: #111827;
-      padding: 1.25rem;
+      padding: 1.4rem;
       border-radius: 18px;
       font-size: 1.6rem;
       border: 2px solid #374151;
       margin-bottom: 0.8rem;
       display: block;
-    }
-    .tag-tipo {
-      color: #fbbf24;
-      border: 1px solid #fbbf24;
-      padding: 2px 6px;
-      border-radius: 4px;
-      margin-right: 10px;
-      font-size: 1rem;
-      vertical-align: middle;
-      display: inline-block;
-      min-width: 64px;
-      text-align: center;
     }
     .sr-only {
       position: absolute;
@@ -70,384 +58,218 @@
     </section>
 
     <div class="flex-1 flex flex-col md:flex-row gap-4 overflow-hidden">
-      <section class="w-full md:w-1/2 flex flex-col overflow-hidden" aria-label="Elenco canali">
+      <section class="w-full md:w-1/3 flex flex-col overflow-hidden" aria-label="Elenco canali">
         <div id="statusArea" class="p-2 text-yellow-400 font-bold text-lg" aria-live="polite">
-          Inizializzazione database...
+          Connessione al server Hetzner...
         </div>
-
-        <ul id="channelList" class="flex-1 overflow-y-auto pr-2" role="listbox" aria-label="Risultati canali">
-          <!-- Popolato da JS -->
-        </ul>
+        <ul id="channelList" class="flex-1 overflow-y-auto pr-2" role="listbox">
+          </ul>
       </section>
 
-      <section class="w-full md:w-1/2 bg-gray-900 rounded-xl border-4 border-gray-700 overflow-hidden" aria-label="Player e controlli">
-        <video id="videoPlayer" class="w-full bg-black" style="height: 30vh;" controls crossorigin="anonymous"></video>
+      <section class="w-full md:w-2/3 bg-gray-900 rounded-xl border-4 border-gray-700 p-4 overflow-y-auto" aria-label="Riproduttore e Archivio">
+        <video id="videoPlayer" class="w-full bg-black mb-4 rounded-lg" style="max-height: 35vh;" controls crossorigin="anonymous"></video>
 
-        <div class="p-4 flex flex-wrap gap-3 overflow-y-auto">
+        <div class="flex flex-wrap gap-3 mb-8">
           <button id="play-pause-btn" class="btn-ctrl bg-blue-700">Play / Pausa</button>
+          <button id="record-btn" class="btn-ctrl bg-purple-800">Registra 30 min</button>
+          <button id="stop-record-btn" class="btn-ctrl bg-red-700">Stop Registra</button>
+          <button id="update-epg-btn" class="btn-ctrl bg-teal-800">Aggiorna Guida TV</button>
+          <button id="rewind-btn" class="btn-ctrl bg-orange-800">- 15 Secondi</button>
+          <button id="forward-btn" class="btn-ctrl bg-orange-800">+ 15 Secondi</button>
           <button id="vol-up-btn" class="btn-ctrl bg-gray-700">Volume +</button>
           <button id="vol-down-btn" class="btn-ctrl bg-gray-700">Volume -</button>
-          <button id="copy-btn" class="btn-ctrl bg-green-800">Copia Link</button>
-          <button id="reset-btn" class="btn-ctrl bg-red-900">Svuota Cerca</button>
         </div>
+
+        <hr class="border-gray-700 mb-6">
+
+        <h2 class="text-2xl font-bold text-purple-400 mb-4">I tuoi file salvati (Ultimi 7 giorni)</h2>
+        <div id="recList" class="space-y-3">
+          </div>
       </section>
     </div>
   </main>
 
   <script>
+    // --- CONFIGURAZIONE ---
+    const SERVER_IP = "http://138.199.196.24:3000";
+    const TOKEN = "42944"; // La tua parola segreta
+
     const video = document.getElementById('videoPlayer');
-    const listContainer = document.getElementById('channelList');
-    const mainSearch = document.getElementById('mainSearch');
     const statusArea = document.getElementById('statusArea');
     const srAnnouncer = document.getElementById('sr-announcer');
+    const listContainer = document.getElementById('channelList');
+    const mainSearch = document.getElementById('mainSearch');
+    const recListContainer = document.getElementById('recList');
 
     let allChannels = [];
     let currentUrl = "";
+    let currentChName = "";
     let hlsInstance = null;
-    let lastRenderedButtons = [];
-    let selectedIndex = -1;
 
-    // Proxy usato SOLO per scaricare le liste (CORS). La riproduzione può fallire se lo stream non consente CORS.
-    const proxy = "https://corsproxy.io/?";
-
-    // Liste IPTV
-    const m3uSources = [
-      "https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u",
-      "http://inthemix.altervista.org/tv.m3u",
-      "https://tivustream.website/urls/listm3u",
-      "https://pastebin.com/raw/8GpCCkhf",
-      "https://pastebin.com/raw/aRYDYSEQ",
-      "https://bit.ly/itatv",
-      "https://iptv-org.github.io/iptv/languages/ita.m3u",
-      // Corretto: l'URL aveva un suffisso "/.m3u" non valido
-      "https://pastebin.com/raw/sG5cusFp",
-      "http://www.pandasat.info/iptv/kodi",
-      "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvita.m3u"
-    ];
-
+    // Funzione per feedback vocale agli screen reader
     function announce(msg) {
       srAnnouncer.textContent = "";
       setTimeout(() => { srAnnouncer.textContent = msg; }, 100);
     }
 
-    function destroyHls() {
-      if (hlsInstance) {
-        try { hlsInstance.destroy(); } catch (_) {}
-        hlsInstance = null;
-      }
-    }
-
+    // Caricamento Iniziale
     async function init() {
-      announce("Caricamento di tutte le liste in corso. Attendi.");
-
-      // Canale manuale
-      addChannel('Lazio Style Radio', 'https://sslazio.fluidstream.eu/sslazio.mp3', 'RADIO');
-
-      const fetchPromises = m3uSources.map(async (src) => {
-        try {
-          const res = await fetch(proxy + encodeURIComponent(src));
-          if (res.ok) {
-            const data = await res.text();
-            parseM3U(data);
-            renderList(mainSearch.value); // Aggiorna la vista mentre carica
-          }
-        } catch (e) {
-          console.warn("Sorgente non raggiungibile:", src);
-        }
-      });
-
-      await Promise.all(fetchPromises);
-
-      statusArea.textContent = `Database Pronto: ${allChannels.length} canali.`;
-      announce(`Caricamento completato. Trovati ${allChannels.length} canali totali dalle tue liste.`);
-      renderList(mainSearch.value);
+      try {
+        const urlM3U = "https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u";
+        const res = await fetch(`${SERVER_IP}/m3u?token=${TOKEN}&url=${encodeURIComponent(urlM3U)}`);
+        const data = await res.text();
+        
+        parseM3U(data);
+        renderList("");
+        updateRecList();
+        statusArea.textContent = "Sistema Online. 20TB di banda disponibili.";
+      } catch (e) {
+        announce("Errore di connessione al server Hetzner. Controlla il token o l'indirizzo IP.");
+      }
     }
 
     function parseM3U(data) {
       const lines = data.split('\n');
-      let currentName = "";
-      for (let raw of lines) {
-        const line = (raw || "").trim();
-        if (line.startsWith("#EXTINF:")) {
-          currentName = line.split(',').pop().trim();
-        } else if (line.startsWith("http") && currentName) {
-          addChannel(currentName, line);
-          currentName = "";
+      let name = "";
+      lines.forEach(line => {
+        line = line.trim();
+        if (line.startsWith("#EXTINF:")) name = line.split(',').pop().trim();
+        else if (line.startsWith("http") && name) {
+          allChannels.push({ pretty: name, url: line });
+          name = "";
         }
-      }
-    }
-
-    function addChannel(name, url, type = null) {
-      const cleanName = (name || "").replace(/\[.*?\]/g, "").trim();
-      if (!cleanName || !url) return;
-
-      const key = cleanName.toLowerCase().replace(/\s+/g, '');
-      if (!type) {
-        type = (url.includes(".mp3") || cleanName.toLowerCase().includes("radio")) ? "RADIO" : "TV";
-      }
-
-      const existing = allChannels.find(c => c.key === key);
-      if (existing) {
-        if (!existing.urls.includes(url)) existing.urls.push(url);
-      } else {
-        allChannels.push({ key, pretty: cleanName, urls: [url], type });
-      }
-    }
-
-    function setSelectedIndex(newIndex) {
-      if (!lastRenderedButtons.length) return;
-
-      newIndex = Math.max(0, Math.min(lastRenderedButtons.length - 1, newIndex));
-
-      if (selectedIndex >= 0 && lastRenderedButtons[selectedIndex]) {
-        lastRenderedButtons[selectedIndex].setAttribute("aria-selected", "false");
-      }
-
-      selectedIndex = newIndex;
-      const btn = lastRenderedButtons[selectedIndex];
-      btn.setAttribute("aria-selected", "true");
-      btn.focus({ preventScroll: true });
-      btn.scrollIntoView({ block: "nearest" });
+      });
     }
 
     function renderList(query) {
       listContainer.innerHTML = "";
-      lastRenderedButtons = [];
-      selectedIndex = -1;
-
-      const q = (query || "").toLowerCase();
-      const filtered = allChannels
-        .filter(c => c.pretty.toLowerCase().includes(q))
-        .sort((a, b) => a.pretty.localeCompare(b.pretty));
-
-      const shown = filtered.slice(0, 200);
-
-      for (let i = 0; i < shown.length; i++) {
-        const ch = shown[i];
-
+      const filtered = allChannels.filter(c => c.pretty.toLowerCase().includes(query.toLowerCase()));
+      
+      filtered.slice(0, 60).forEach(ch => {
         const li = document.createElement('li');
-        li.setAttribute("role", "none");
-
         const btn = document.createElement('button');
         btn.className = "btn-channel";
-        btn.type = "button";
-        btn.setAttribute("role", "option");
-        btn.setAttribute("aria-selected", "false");
-
-        // Niente innerHTML: evita XSS se una playlist contiene HTML nel nome
-        const tag = document.createElement('span');
-        tag.className = "tag-tipo";
-        tag.textContent = ch.type;
-
-        const label = document.createElement('span');
-        label.textContent = " " + ch.pretty;
-
-        btn.appendChild(tag);
-        btn.appendChild(label);
-
-        btn.addEventListener('click', () => {
-          setSelectedIndex(i);
-          playSource(ch.pretty, ch.urls);
-        });
-
-        btn.addEventListener('focus', () => {
-          selectedIndex = i;
-          for (let k = 0; k < lastRenderedButtons.length; k++) {
-            lastRenderedButtons[k].setAttribute("aria-selected", k === i ? "true" : "false");
-          }
-        });
-
+        btn.textContent = ch.pretty;
+        btn.onclick = () => {
+          currentUrl = ch.url;
+          currentChName = ch.pretty;
+          playSource(ch.url, ch.pretty);
+        };
         li.appendChild(btn);
         listContainer.appendChild(li);
-        lastRenderedButtons.push(btn);
-      }
-
-      if (q !== "") {
-        announce(`Trovati ${filtered.length} canali.`);
-      }
-    }
-
-    async function playSource(name, urls) {
-      statusArea.textContent = `Connessione a ${name}...`;
-      announce(`Provo a caricare ${name}`);
-
-      for (let url of urls) {
-        const success = await tryPlay(url);
-        if (success) {
-          currentUrl = url;
-          statusArea.textContent = `In onda: ${name}`;
-          announce("Riproduzione avviata.");
-          return;
-        }
-      }
-
-      statusArea.textContent = "Errore: Canale non disponibile.";
-      announce("Nessun link funzionante per questo canale.");
-    }
-
-    function tryPlay(url) {
-      return new Promise((resolve) => {
-        let done = false;
-        let recoverAttempted = false;
-
-        const safeResolve = (ok) => {
-          if (done) return;
-          done = true;
-          clearTimeout(timer);
-
-          if (!ok) {
-            // pulizia: evita che una riproduzione fallita "resti appesa"
-            destroyHls();
-            try {
-              video.pause();
-              video.removeAttribute("src");
-              video.load();
-            } catch (_) {}
-          }
-
-          resolve(ok);
-        };
-
-        destroyHls();
-        video.pause();
-
-        const timer = setTimeout(() => safeResolve(false), 8000);
-
-        const isHls = /\.m3u8(\?.*)?$/i.test(url) || url.toLowerCase().includes(".m3u8");
-
-        if (isHls) {
-          // Safari/iOS spesso riproduce HLS in modo nativo
-          const canNative = video.canPlayType('application/vnd.apple.mpegurl') || video.canPlayType('application/x-mpegURL');
-          if (!Hls.isSupported() && canNative) {
-            video.src = url;
-            video.load();
-            video.play()
-              .then(() => safeResolve(true))
-              .catch(() => safeResolve(false));
-            return;
-          }
-
-          if (Hls.isSupported()) {
-            hlsInstance = new Hls();
-            hlsInstance.loadSource(url);
-            hlsInstance.attachMedia(video);
-
-            const onError = (event, data) => {
-              if (!data || !data.fatal) return;
-
-              // prova UN solo tentativo di recupero, poi fallisce e passa al prossimo link
-              if ((data.type === Hls.ErrorTypes.NETWORK_ERROR || data.type === Hls.ErrorTypes.MEDIA_ERROR) && !recoverAttempted) {
-                recoverAttempted = true;
-                try {
-                  if (data.type === Hls.ErrorTypes.NETWORK_ERROR) hlsInstance.startLoad();
-                  else hlsInstance.recoverMediaError();
-                } catch (_) {}
-                return;
-              }
-
-              safeResolve(false);
-            };
-
-            hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-              video.play()
-                .then(() => safeResolve(true))
-                .catch(() => safeResolve(false));
-            });
-
-            hlsInstance.on(Hls.Events.ERROR, onError);
-
-            const onVidErr = () => safeResolve(false);
-            video.addEventListener('error', onVidErr, { once: true });
-            return;
-          }
-
-          safeResolve(false);
-          return;
-        }
-
-        // Non-HLS
-        video.src = url;
-        video.load();
-        video.play()
-          .then(() => safeResolve(true))
-          .catch(() => safeResolve(false));
       });
     }
 
-
-    // Shortcut tastiera
-    window.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.key.toLowerCase() === 's') {
-        e.preventDefault();
-        mainSearch.focus();
-        announce("Ricerca attiva. Scrivi il nome di un canale.");
-      }
-    });
-
-    // Navigazione con frecce nella lista canali
-    listContainer.addEventListener('keydown', (e) => {
-      if (!lastRenderedButtons.length) return;
-
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setSelectedIndex(selectedIndex >= 0 ? selectedIndex + 1 : 0);
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setSelectedIndex(selectedIndex >= 0 ? selectedIndex - 1 : 0);
-      } else if (e.key === "Home") {
-        e.preventDefault();
-        setSelectedIndex(0);
-      } else if (e.key === "End") {
-        e.preventDefault();
-        setSelectedIndex(lastRenderedButtons.length - 1);
-      } else if (e.key === "Enter" || e.key === " ") {
-        if (selectedIndex >= 0) {
-          e.preventDefault();
-          lastRenderedButtons[selectedIndex].click();
-        }
-      }
-    });
-
-    // Eventi Bottoni
-    document.getElementById('play-pause-btn').addEventListener('click', () => {
-      if (video.paused) {
-        video.play().then(() => announce("Play")).catch(() => announce("Impossibile avviare la riproduzione."));
-      } else {
-        video.pause();
-        announce("Pausa");
-      }
-    });
-
-    document.getElementById('vol-up-btn').addEventListener('click', () => {
-      video.volume = Math.min(1, (video.volume || 0) + 0.1);
-      announce(`Volume ${Math.round(video.volume * 100)}`);
-    });
-
-    document.getElementById('vol-down-btn').addEventListener('click', () => {
-      video.volume = Math.max(0, (video.volume || 0) - 0.1);
-      announce(`Volume ${Math.round(video.volume * 100)}`);
-    });
-
-    document.getElementById('copy-btn').addEventListener('click', async () => {
-      if (!currentUrl) return;
+    async function playSource(url, nome) {
+      statusArea.textContent = `Caricamento: ${nome}...`;
+      
+      // Recupera info Guida TV se disponibile
       try {
-        await navigator.clipboard.writeText(currentUrl);
-        announce("Link copiato.");
-      } catch (_) {
-        prompt("Copia questo link:", currentUrl);
+        const infoRes = await fetch(`${SERVER_IP}/info-programma?token=${TOKEN}&nome=${encodeURIComponent(nome)}`);
+        const infoData = await infoRes.json();
+        if (infoData.titolo) {
+          announce(`In onda su ${nome}: ${infoData.titolo}`);
+          statusArea.textContent = `In onda: ${nome} - ${infoData.titolo}`;
+        } else {
+          announce(`Riproduzione avviata: ${nome}`);
+        }
+      } catch (e) { announce(`Avviato ${nome}`); }
+
+      if (hlsInstance) hlsInstance.destroy();
+
+      if (url.includes(".m3u8") && Hls.isSupported()) {
+        hlsInstance = new Hls();
+        hlsInstance.loadSource(url);
+        hlsInstance.attachMedia(video);
+        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+      } else {
+        video.src = url;
+        video.play().catch(() => announce("Errore: Impossibile riprodurre questo link."));
       }
+    }
+
+    // Gestione Archivio
+    async function updateRecList() {
+      try {
+        const res = await fetch(`${SERVER_IP}/lista-registrazioni?token=${TOKEN}`);
+        const files = await res.json();
+        recListContainer.innerHTML = files.length ? "" : "<p class='text-gray-500'>Nessuna registrazione negli ultimi 7 giorni.</p>";
+        
+        files.reverse().forEach(f => {
+          const item = document.createElement('div');
+          item.className = "bg-gray-800 p-4 rounded-xl flex justify-between items-center border-l-8 border-purple-600 shadow-lg";
+          item.innerHTML = `
+            <span class="text-xl font-bold">${f.nome.split('_')[0]}</span>
+            <div class="flex gap-2">
+              <button onclick="playSource('${f.url}', 'Registrazione')" class="bg-blue-600 p-3 rounded-lg font-bold">Ascolta</button>
+              <a href="${f.url}" download class="bg-green-700 p-3 rounded-lg font-bold">Scarica</a>
+            </div>
+          `;
+          recListContainer.appendChild(item);
+        });
+      } catch (e) { console.error("Errore archivio"); }
+    }
+
+    // --- AZIONI BOTTONI ---
+
+    document.getElementById('update-epg-btn').onclick = async () => {
+      announce("Download della guida TV in corso dal server Hetzner...");
+      try {
+        const res = await fetch(`${SERVER_IP}/scarica-guida?token=${TOKEN}`);
+        const data = await res.json();
+        announce(data.msg); // Annuncia "Guida TV aggiornata e pronta"
+      } catch (e) { announce("Errore nel download della guida."); }
+    };
+
+    document.getElementById('record-btn').onclick = async () => {
+      if (!currentUrl) return announce("Seleziona prima un canale.");
+      
+      // Controllo spazio disco preventivo
+      const disk = await (await fetch(`${SERVER_IP}/stato-disco?token=${TOKEN}`)).json();
+      if (disk.pieno) return announce(`Errore: Spazio insufficiente sul server. Rimangono solo ${disk.libero} GB.`);
+
+      announce(`Avvio registrazione di ${currentChName} per 30 minuti.`);
+      const res = await fetch(`${SERVER_IP}/registra?token=${TOKEN}&url=${encodeURIComponent(currentUrl)}&nome=${encodeURIComponent(currentChName)}`);
+      const data = await res.json();
+      statusArea.textContent = data.msg;
+    };
+
+    document.getElementById('stop-record-btn').onclick = async () => {
+      announce("Invio comando di stop al server...");
+      const res = await fetch(`${SERVER_IP}/stop-registra?token=${TOKEN}`);
+      const data = await res.json();
+      announce(data.msg);
+      setTimeout(updateRecList, 2000); // Aggiorna lista dopo il salvataggio
+    };
+
+    // Controlli Riproduzione
+    document.getElementById('play-pause-btn').onclick = () => {
+      if (video.paused) { video.play(); announce("Play"); }
+      else { video.pause(); announce("Pausa"); }
+    };
+
+    document.getElementById('rewind-btn').onclick = () => { video.currentTime -= 15; announce("Indietro 15 secondi"); };
+    document.getElementById('forward-btn').onclick = () => { video.currentTime += 15; announce("Avanti 15 secondi"); };
+    
+    document.getElementById('vol-up-btn').onclick = () => {
+      video.volume = Math.min(1, video.volume + 0.1);
+      announce(`Volume ${Math.round(video.volume * 100)} percento`);
+    };
+    document.getElementById('vol-down-btn').onclick = () => {
+      video.volume = Math.max(0, video.volume - 0.1);
+      announce(`Volume ${Math.round(video.volume * 100)} percento`);
+    };
+
+    // Ricerca e scorciatoia
+    mainSearch.oninput = (e) => renderList(e.target.value);
+    window.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 's') { e.preventDefault(); mainSearch.focus(); announce("Cerca canale attiva."); }
     });
 
-    document.getElementById('reset-btn').addEventListener('click', () => {
-      mainSearch.value = "";
-      renderList("");
-      mainSearch.focus();
-      announce("Ricerca svuotata.");
-    });
-
-    mainSearch.addEventListener('input', (e) => renderList(e.target.value));
-
+    // Avvio Sistema
     init();
+    // Aggiorna automaticamente l'archivio ogni minuto
+    setInterval(updateRecList, 60000);
   </script>
 </body>
 </html>
