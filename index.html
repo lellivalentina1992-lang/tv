@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TV/Radio ULTRA - Sistema Protetto</title>
+  <title>TV/Radio ULTRA - 100% Diretto</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -54,10 +54,9 @@
       
       <nav class="w-full md:w-1/3 flex flex-col overflow-hidden" aria-label="Elenco canali">
         <div id="statusArea" class="p-2 text-yellow-400 font-bold text-lg" aria-live="polite">
-          Caricamento sistema...
+          Caricamento lista da GitHub...
         </div>
-        <ul id="channelList" class="flex-1 overflow-y-auto pr-2" role="listbox">
-          </ul>
+        <ul id="channelList" class="flex-1 overflow-y-auto pr-2" role="listbox"></ul>
       </nav>
 
       <section class="w-full md:w-2/3 bg-gray-900 rounded-xl border-4 border-gray-700 p-4 flex flex-col" aria-label="Riproduttore">
@@ -65,21 +64,20 @@
 
         <div class="flex flex-wrap gap-3">
           <button id="play-pause-btn" class="btn-ctrl bg-blue-700">Play/Pausa (K)</button>
-          <button id="fav-toggle-btn" class="btn-ctrl bg-purple-700">Aggiungi Preferito (P)</button>
+          <button id="fav-toggle-btn" class="btn-ctrl bg-purple-700">Preferito (P)</button>
           <button id="sleep-btn" class="btn-ctrl bg-indigo-800">Timer 30 Min (T)</button>
           <button id="rewind-btn" class="btn-ctrl bg-orange-800">- 15 Sec (J)</button>
           <button id="forward-btn" class="btn-ctrl bg-orange-800">+ 15 Sec (L)</button>
-          <button id="vol-up-btn" class="btn-ctrl bg-gray-700">Volume +</button>
-          <button id="vol-down-btn" class="btn-ctrl bg-gray-700">Volume -</button>
+          <button id="vol-up-btn" class="btn-ctrl bg-gray-700">Vol +</button>
+          <button id="vol-down-btn" class="btn-ctrl bg-gray-700">Vol -</button>
         </div>
       </section>
-
     </div>
   </main>
 
   <script>
-    const SERVER_IP = "http://138.199.196.24:3000";
-    const TOKEN = "42944";
+    // URL DIRETTO GITHUB (Senza passare dal server)
+    const GITHUB_URL = "https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u";
 
     const video = document.getElementById('videoPlayer');
     const statusArea = document.getElementById('statusArea');
@@ -98,23 +96,24 @@
       setTimeout(() => { srAnnouncer.textContent = msg; }, 100);
     }
 
-    // --- CARICAMENTO INIZIALE ---
     async function init() {
       try {
-        const urlM3U = "https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u";
-        const res = await fetch(`${SERVER_IP}/m3u?token=${TOKEN}&url=${encodeURIComponent(urlM3U)}`);
+        const res = await fetch(GITHUB_URL);
+        if (!res.ok) throw new Error();
         const data = await res.text();
         
         parseM3U(data);
         renderList("");
         
-        // Ripristina volume salvato
+        // Caricamento volume salvato nel browser
         const savedVol = localStorage.getItem('tv_ultra_vol');
         if (savedVol !== null) video.volume = savedVol;
 
-        statusArea.textContent = "Sistema Pronto.";
+        statusArea.textContent = "Sistema Online. Caricato da GitHub.";
+        announce("Lista canali pronta.");
       } catch (e) {
-        announce("Errore di connessione al server.");
+        announce("Errore nel caricamento della lista da GitHub.");
+        statusArea.textContent = "Errore connessione.";
       }
     }
 
@@ -137,17 +136,17 @@
       listContainer.innerHTML = "";
       const filtered = allChannels.filter(c => c.name.toLowerCase().includes(query.toLowerCase()));
 
-      // Se non c'è ricerca, mostra prima i preferiti
+      // Se non c'è ricerca, mostra prima i preferiti salvati nel browser
       if (query === "" && favorites.length > 0) {
         const head = document.createElement('li');
         head.className = "text-purple-400 font-bold p-2 text-xl";
-        head.textContent = "--- PREFERITI ---";
+        head.textContent = "PREFERITI:";
         listContainer.appendChild(head);
         favorites.forEach(f => createButton(f, true));
         
         const headAll = document.createElement('li');
         headAll.className = "text-yellow-500 font-bold p-2 text-xl mt-4";
-        headAll.textContent = "--- TUTTI I CANALI ---";
+        headAll.textContent = "TUTTI I CANALI:";
         listContainer.appendChild(headAll);
       }
 
@@ -167,14 +166,7 @@
     async function playSource(ch) {
       currentCh = ch;
       statusArea.textContent = `Avvio: ${ch.name}`;
-      
-      try {
-        const infoRes = await fetch(`${SERVER_IP}/info-programma?token=${TOKEN}&nome=${encodeURIComponent(ch.name)}`);
-        const infoData = await infoRes.json();
-        const msg = infoData.titolo ? `In onda su ${ch.name}: ${infoData.titolo}` : `Avvio ${ch.name}`;
-        announce(msg);
-        statusArea.textContent = msg;
-      } catch (e) { announce(`Avvio ${ch.name}`); }
+      announce(`In riproduzione: ${ch.name}`);
 
       if (hlsInstance) hlsInstance.destroy();
 
@@ -185,13 +177,12 @@
         hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => video.play());
       } else {
         video.src = ch.url;
-        video.play().catch(() => announce("Errore di riproduzione."));
+        video.play().catch(() => announce("Errore di riproduzione sul link selezionato."));
       }
     }
 
-    // --- FUNZIONI EXTRA (TIMER E PREFERITI) ---
     function toggleFavorite() {
-      if (!currentCh) return announce("Nessun canale selezionato.");
+      if (!currentCh) return announce("Seleziona prima un canale.");
       const index = favorites.findIndex(f => f.url === currentCh.url);
       if (index === -1) {
         favorites.push(currentCh);
@@ -206,14 +197,14 @@
 
     function startTimer(min) {
       if (sleepTimer) clearTimeout(sleepTimer);
-      announce(`Timer impostato a ${min} minuti.`);
+      announce(`Timer attivo: spegnimento tra ${min} minuti.`);
       sleepTimer = setTimeout(() => {
         video.pause();
-        announce("Timer scaduto. Riproduzione interrotta.");
+        announce("Timer scaduto. Radio spenta.");
       }, min * 60000);
     }
 
-    // --- EVENTI E SCORCIATOIE ---
+    // --- CONTROLLI ---
     mainSearch.oninput = (e) => renderList(e.target.value);
     
     video.onvolumechange = () => localStorage.setItem('tv_ultra_vol', video.volume);
@@ -240,13 +231,18 @@
         case 't': startTimer(30); break;
         case 'j': video.currentTime -= 15; announce("Indietro 15"); break;
         case 'l': video.currentTime += 15; announce("Avanti 15"); break;
-        case 's': if (e.ctrlKey) { e.preventDefault(); mainSearch.focus(); announce("Cerca."); } break;
+        case 's': if (e.ctrlKey) { e.preventDefault(); mainSearch.focus(); announce("Cerca canale."); } break;
       }
     });
 
-    // Gestione Volume bottoni
-    document.getElementById('vol-up-btn').onclick = () => { video.volume = Math.min(1, video.volume + 0.1); announce(`Vol ${Math.round(video.volume*100)}%`); };
-    document.getElementById('vol-down-btn').onclick = () => { video.volume = Math.max(0, video.volume - 0.1); announce(`Vol ${Math.round(video.volume*100)}%`); };
+    document.getElementById('vol-up-btn').onclick = () => {
+      video.volume = Math.min(1, video.volume + 0.1);
+      announce(`Volume ${Math.round(video.volume * 100)} percento`);
+    };
+    document.getElementById('vol-down-btn').onclick = () => {
+      video.volume = Math.max(0, video.volume - 0.1);
+      announce(`Volume ${Math.round(video.volume * 100)} percento`);
+    };
 
     init();
   </script>
