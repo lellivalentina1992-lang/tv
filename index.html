@@ -3,18 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TV ULTRA - Live Sync</title>
+  <title>TV ULTRA - Sleep Timer</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     body { font-family: system-ui, sans-serif; background: #000; color: #fff; margin: 0; padding: 15px; display: flex; flex-direction: column; min-height: 100vh; }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+    
     label { display: block; margin-bottom: 5px; font-weight: bold; color: #fbbf24; font-size: 1.2rem; }
-    input { width: 100%; padding: 20px; margin-bottom: 15px; font-size: 1.5rem; border-radius: 12px; background: #111; color: #fff; border: 4px solid #3b82f6; box-sizing: border-box; }
+    input, select { width: 100%; padding: 20px; margin-bottom: 15px; font-size: 1.5rem; border-radius: 12px; background: #111; color: #fff; border: 4px solid #3b82f6; box-sizing: border-box; }
+    
+    .timer-section { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 2px dashed #fbbf24; }
+    .btn-timer { width: 100%; padding: 15px; background: #fbbf24; color: #000; font-weight: bold; border: none; border-radius: 8px; font-size: 1.1rem; margin-top: 5px; }
+
     #video-container { width: 100%; background: #000; border-radius: 12px; margin-bottom: 15px; border: 2px solid #333; display: none; }
     video { width: 100%; aspect-ratio: 16 / 9; display: block; }
-    .lista-canali { flex: 1; display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
+
+    .lista-canali { flex: 1; display: flex; flex-direction: column; gap: 10px; }
     .btn-canale { width: 100%; padding: 22px; font-size: 1.4rem; text-align: left; background: #1e293b; color: white; border: 2px solid #334155; border-radius: 12px; }
-    .status { color: #fbbf24; font-weight: bold; margin-bottom: 10px; min-height: 1.5em; }
+    .status { color: #fbbf24; font-weight: bold; margin-bottom: 10px; }
   </style>
 </head>
 <body>
@@ -22,13 +28,26 @@
   <div id="announcer" class="sr-only" aria-live="assertive"></div>
 
   <section role="search">
-    <label for="cercaCanale">Cerca Canale (Sincronizzazione Live):</label>
+    <label for="cercaCanale">Cerca Canale:</label>
     <input type="search" id="cercaCanale" placeholder="Es: Rai 1, Boing, Lazio..." autofocus>
-    <div id="stato" class="status" aria-live="polite">Caricamento mega database...</div>
+    
+    <div class="timer-section" role="group" aria-label="Timer di spegnimento">
+      <label for="sleepTimer">Timer di spegnimento (minuti):</label>
+      <select id="sleepTimer">
+        <option value="0">Disattivato</option>
+        <option value="15">15 Minuti</option>
+        <option value="30">30 Minuti</option>
+        <option value="60">60 Minuti</option>
+        <option value="90">90 Minuti</option>
+      </select>
+      <button class="btn-timer" id="btnAvviaTimer">Attiva Timer</button>
+    </div>
+
+    <div id="stato" class="status" aria-live="polite">Caricamento 21 liste...</div>
   </section>
 
   <div id="video-container">
-    <video id="mainPlayer" controls playsinline crossorigin="anonymous" aria-label="Lettore Multimediale"></video>
+    <video id="mainPlayer" controls playsinline crossorigin="anonymous"></video>
   </div>
 
   <nav class="lista-canali" id="listaCanali" role="list"></nav>
@@ -64,22 +83,39 @@
     const listaCanali = document.getElementById('listaCanali');
     const stato = document.getElementById('stato');
     const announcer = document.getElementById('announcer');
+    const selectTimer = document.getElementById('sleepTimer');
+    const btnTimer = document.getElementById('btnAvviaTimer');
 
     let databaseCanali = {}; 
     let hls = null;
-    let canaleCorrente = "";
-    let indiceSorgente = 0;
+    let sleepTimeout = null;
 
     function comunica(testo) {
       announcer.textContent = "";
       setTimeout(() => { announcer.textContent = testo; }, 100);
     }
 
-    // Sincronizzazione automatica al Play per evitare differite
+    // GESTIONE TIMER
+    btnTimer.onclick = () => {
+      const minuti = parseInt(selectTimer.value);
+      if (sleepTimeout) clearTimeout(sleepTimeout);
+
+      if (minuti > 0) {
+        comunica(`Timer attivato per ${minuti} minuti. La riproduzione si fermerà automaticamente.`);
+        sleepTimeout = setTimeout(() => {
+          player.pause();
+          comunica("Il timer è scaduto. Riproduzione interrotta.");
+          if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "none";
+        }, minuti * 60000);
+      } else {
+        comunica("Timer disattivato.");
+      }
+    };
+
+    // Sincronizzazione Live al Play
     player.addEventListener('play', () => {
       if (player.seekable.length > 0) {
         player.currentTime = player.seekable.end(player.seekable.length - 1);
-        comunica("Sincronizzazione diretta completata.");
       }
     });
 
@@ -96,7 +132,7 @@
         stato.textContent = `Caricamento: ${perc}%`;
         if (perc % 10 === 0) comunica(`${perc} per cento.`);
       }
-      comunica(`Pronto. Trovati ${Object.keys(databaseCanali).length} canali.`);
+      comunica(`Caricamento completato.`);
       renderizza("");
     }
 
@@ -110,7 +146,7 @@
         } 
         else if (l.startsWith("http") && nomeTemp) {
           if (!databaseCanali[nomeTemp]) databaseCanali[nomeTemp] = [];
-          if (!databaseCanali[nomeTemp].includes(l)) databaseCanali[nomeTemp].unshift(l);
+          databaseCanali[nomeTemp].unshift(l);
           nomeTemp = ""; 
         }
       }
@@ -124,8 +160,6 @@
         btn.className = "btn-canale";
         btn.textContent = nome;
         btn.onclick = () => {
-          canaleCorrente = nome;
-          indiceSorgente = 0;
           container.style.display = 'block';
           avvia(nome, databaseCanali[nome][0]);
         };
@@ -134,40 +168,17 @@
     }
 
     function avvia(nome, url) {
-      stato.textContent = `Avvio: ${nome}`;
-      
+      stato.textContent = `In onda: ${nome}`;
       if ('mediaSession' in navigator) {
-        navigator.mediaSession.metadata = new MediaMetadata({
-          title: nome,
-          artist: "TV ULTRA",
-          album: "DIRETTA LIVE"
-        });
-        // Comandi remoti per cambiare sorgente
-        navigator.mediaSession.setActionHandler('nexttrack', () => sorgenteSuccessiva());
-        navigator.mediaSession.setActionHandler('previoustrack', () => sorgenteSuccessiva());
+        navigator.mediaSession.metadata = new MediaMetadata({ title: nome, artist: "TV ULTRA" });
       }
-
       if (hls) hls.destroy();
       if (url.includes(".m3u8") && Hls.isSupported()) {
-        hls = new Hls({ liveSyncDurationCount: 3, liveMaxLatencyDurationCount: 10 }); 
-        hls.loadSource(url);
-        hls.attachMedia(player);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => player.play());
-        hls.on(Hls.Events.ERROR, (e, d) => { if (d.fatal) sorgenteSuccessiva(); });
+        hls = new Hls(); hls.loadSource(url); hls.attachMedia(player);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => { player.play(); comunica("Avviato " + nome); });
       } else {
         player.src = url;
-        player.play().catch(() => sorgenteSuccessiva());
-      }
-    }
-
-    function sorgenteSuccessiva() {
-      const sorgenti = databaseCanali[canaleCorrente];
-      indiceSorgente++;
-      if (indiceSorgente < sorgenti.length) {
-        comunica("Cambio sorgente.");
-        avvia(canaleCorrente, sorgenti[indiceSorgente]);
-      } else {
-        comunica("Nessun'altra sorgente per questo canale.");
+        player.play().catch(() => comunica("Errore sorgente."));
       }
     }
 
