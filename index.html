@@ -1,250 +1,190 @@
 <!DOCTYPE html>
-<html lang="it" class="h-full bg-black text-white">
+<html lang="it">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TV/Radio ULTRA - 100% Diretto</title>
-
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TV ULTRA - Auto-Sorgenti e Link VLC</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-
   <style>
-    /* Focus ultra-visibile per navigazione assistita */
-    :focus {
-      outline: 8px solid #fbbf24 !important;
-      outline-offset: 4px;
-      background-color: #1e40af !important;
-    }
-    .btn-ctrl { flex: 1 1 30%; min-height: 80px; font-weight: bold; font-size: 1.2rem; border-radius: 15px; transition: all 0.2s; }
-    .btn-channel {
-      width: 100%;
-      text-align: left;
-      background: #111827;
-      padding: 1.4rem;
-      border-radius: 18px;
-      font-size: 1.6rem;
-      border: 2px solid #374151;
-      margin-bottom: 0.8rem;
-      display: block;
-    }
-    .fav-active { border-color: #a855f7 !important; background: #2e1065 !important; }
-    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0; }
+    body { font-family: system-ui, sans-serif; background: #000; color: #fff; margin: 0; padding: 15px; display: flex; flex-direction: column; min-height: 100vh; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+    
+    label { display: block; margin-bottom: 5px; font-weight: bold; color: #fbbf24; font-size: 1.2rem; }
+    input { width: 100%; padding: 20px; margin-bottom: 15px; font-size: 1.5rem; border-radius: 12px; background: #111; color: #fff; border: 4px solid #3b82f6; box-sizing: border-box; }
+    input:focus { border-color: #fbbf24; outline: none; }
+
+    #video-container { width: 100%; background: #000; border-radius: 12px; margin-bottom: 15px; border: 2px solid #333; }
+    video { width: 100%; aspect-ratio: 16 / 9; display: block; }
+
+    .lista-canali { flex: 1; display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
+    .btn-canale { width: 100%; padding: 22px; font-size: 1.4rem; text-align: left; background: #1e293b; color: white; border: 2px solid #334155; border-radius: 12px; }
+    .btn-canale:focus { background: #1e40af; border-color: #fbbf24; outline: 8px solid #fbbf24; }
+
+    .status { color: #fbbf24; font-weight: bold; margin-bottom: 10px; min-height: 1.5em; }
+
+    /* Area Link VLC */
+    #area-vlc { background: #111; padding: 20px; border-top: 5px solid #fbbf24; margin-top: 20px; border-radius: 15px 15px 0 0; }
+    .link-vlc { background: #222; border: 1px solid #444; padding: 10px; margin-bottom: 10px; word-break: break-all; font-family: monospace; font-size: 0.9rem; color: #60a5fa; display: block; width: 100%; border-radius: 5px; }
   </style>
 </head>
+<body>
 
-<body class="h-full flex flex-col font-sans overflow-hidden">
+  <div id="announcer" class="sr-only" aria-live="assertive"></div>
 
-  <div id="sr-announcer" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+  <section role="search">
+    <label for="cercaCanale">Cerca Canale:</label>
+    <input type="search" id="cercaCanale" placeholder="Es: Rai, Mediaset, Radio..." autofocus>
+    <div id="stato" class="status">Inizializzazione sorgenti...</div>
+  </section>
 
-  <main class="flex-1 flex flex-col p-4 overflow-hidden">
-    
-    <section class="mb-4" role="search">
-      <label for="mainSearch" class="block text-xl font-bold mb-2 text-yellow-500">Cerca Canale (Ctrl+S):</label>
-      <input
-        type="search"
-        id="mainSearch"
-        class="w-full bg-gray-900 p-5 rounded-xl border-4 border-blue-600 text-white text-3xl focus:border-yellow-500"
-        placeholder="Scrivi qui (es: Rai, Mediaset)..."
-        autocomplete="off"
-        autofocus
-      />
-    </section>
+  <div id="video-container">
+    <video id="mainPlayer" controls playsinline crossorigin="anonymous"></video>
+  </div>
 
-    <div class="flex-1 flex flex-col md:flex-row gap-4 overflow-hidden">
-      
-      <nav class="w-full md:w-1/3 flex flex-col overflow-hidden" aria-label="Elenco canali">
-        <div id="statusArea" class="p-2 text-yellow-400 font-bold text-lg" aria-live="polite">
-          Caricamento lista da GitHub...
-        </div>
-        <ul id="channelList" class="flex-1 overflow-y-auto pr-2" role="listbox"></ul>
-      </nav>
+  <nav class="lista-canali" id="listaCanali" role="list"></nav>
 
-      <section class="w-full md:w-2/3 bg-gray-900 rounded-xl border-4 border-gray-700 p-4 flex flex-col" aria-label="Riproduttore">
-        <video id="videoPlayer" class="w-full bg-black mb-4 rounded-lg" style="max-height: 40vh;" controls crossorigin="anonymous"></video>
-
-        <div class="flex flex-wrap gap-3">
-          <button id="play-pause-btn" class="btn-ctrl bg-blue-700">Play/Pausa (K)</button>
-          <button id="fav-toggle-btn" class="btn-ctrl bg-purple-700">Preferito (P)</button>
-          <button id="sleep-btn" class="btn-ctrl bg-indigo-800">Timer 30 Min (T)</button>
-          <button id="rewind-btn" class="btn-ctrl bg-orange-800">- 15 Sec (J)</button>
-          <button id="forward-btn" class="btn-ctrl bg-orange-800">+ 15 Sec (L)</button>
-          <button id="vol-up-btn" class="btn-ctrl bg-gray-700">Vol +</button>
-          <button id="vol-down-btn" class="btn-ctrl bg-gray-700">Vol -</button>
-        </div>
-      </section>
+  <footer id="area-vlc" aria-labelledby="vlc-title">
+    <h2 id="vlc-title" style="color: #fbbf24; margin-top: 0;">Link per VLC (Sorgenti trovate)</h2>
+    <div id="contenitore-link">
+      <p>Seleziona un canale per vedere i link diretti qui.</p>
     </div>
-  </main>
+  </footer>
 
   <script>
-    // URL DIRETTO GITHUB (Senza passare dal server)
-    const GITHUB_URL = "https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u";
+    const LISTE_URLS = [
+      "https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u",
+      "http://inthemix.altervista.org/tv.m3u",
+      "https://iptv-org.github.io/iptv/languages/ita.m3u",
+      "https://bit.ly/itatv",
+      "http://www.pandasat.info/iptv/kodi",
+      "https://tivustream.website/urls/listm3u",
+      "https://pastebin.com/raw/8GpCCkhf",
+      "https://pastebin.com/raw/aRYDYSEQ"
+    ];
 
-    const video = document.getElementById('videoPlayer');
-    const statusArea = document.getElementById('statusArea');
-    const srAnnouncer = document.getElementById('sr-announcer');
-    const listContainer = document.getElementById('channelList');
-    const mainSearch = document.getElementById('mainSearch');
+    const player = document.getElementById('mainPlayer');
+    const cercaInput = document.getElementById('cercaCanale');
+    const listaCanali = document.getElementById('listaCanali');
+    const stato = document.getElementById('stato');
+    const announcer = document.getElementById('announcer');
+    const contenitoreLink = document.getElementById('contenitore-link');
 
-    let allChannels = [];
-    let favorites = JSON.parse(localStorage.getItem('tv_ultra_favs') || "[]");
-    let hlsInstance = null;
-    let sleepTimer = null;
-    let currentCh = null;
+    let databaseCanali = {}; 
+    let hls = null;
+    let tentativoCorrente = 0;
+    let canaliDaProvare = [];
+    let nomeCanaleAttivo = "";
 
-    function announce(msg) {
-      srAnnouncer.textContent = "";
-      setTimeout(() => { srAnnouncer.textContent = msg; }, 100);
+    function comunica(testo) {
+      announcer.textContent = "";
+      setTimeout(() => { announcer.textContent = testo; }, 100);
     }
 
-    async function init() {
-      try {
-        const res = await fetch(GITHUB_URL);
-        if (!res.ok) throw new Error();
-        const data = await res.text();
-        
-        parseM3U(data);
-        renderList("");
-        
-        // Caricamento volume salvato nel browser
-        const savedVol = localStorage.getItem('tv_ultra_vol');
-        if (savedVol !== null) video.volume = savedVol;
+    async function inizializza() {
+      const promesse = LISTE_URLS.map(url => 
+        fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`)
+          .then(r => r.text())
+          .then(data => parseM3U(data))
+          .catch(() => console.log("Errore lista: " + url))
+      );
 
-        statusArea.textContent = "Sistema Online. Caricato da GitHub.";
-        announce("Lista canali pronta.");
-      } catch (e) {
-        announce("Errore nel caricamento della lista da GitHub.");
-        statusArea.textContent = "Errore connessione.";
-      }
+      await Promise.all(promesse);
+      stato.textContent = `${Object.keys(databaseCanali).length} canali pronti.`;
+      renderizza("");
     }
 
     function parseM3U(data) {
-      allChannels = [];
       const lines = data.split('\n');
-      let name = "";
-      lines.forEach(line => {
-        line = line.trim();
-        if (line.startsWith("#EXTINF:")) {
-          name = line.split(',').pop().trim();
-        } else if (line.startsWith("http") && name) {
-          allChannels.push({ name: name, url: line });
-          name = "";
+      let nome = "";
+      lines.forEach(l => {
+        l = l.trim();
+        if (l.startsWith("#EXTINF:")) {
+          nome = l.split(',').pop().trim().toUpperCase();
+        } else if (l.startsWith("http") && nome) {
+          if (!databaseCanali[nome]) databaseCanali[nome] = [];
+          if (!databaseCanali[nome].includes(l)) databaseCanali[nome].push(l);
+          nome = "";
         }
       });
     }
 
-    function renderList(query) {
-      listContainer.innerHTML = "";
-      const filtered = allChannels.filter(c => c.name.toLowerCase().includes(query.toLowerCase()));
-
-      // Se non c'è ricerca, mostra prima i preferiti salvati nel browser
-      if (query === "" && favorites.length > 0) {
-        const head = document.createElement('li');
-        head.className = "text-purple-400 font-bold p-2 text-xl";
-        head.textContent = "PREFERITI:";
-        listContainer.appendChild(head);
-        favorites.forEach(f => createButton(f, true));
-        
-        const headAll = document.createElement('li');
-        headAll.className = "text-yellow-500 font-bold p-2 text-xl mt-4";
-        headAll.textContent = "TUTTI I CANALI:";
-        listContainer.appendChild(headAll);
-      }
-
-      filtered.slice(0, 100).forEach(ch => createButton(ch));
+    function renderizza(filtro) {
+      listaCanali.innerHTML = "";
+      const nomiFiltrati = Object.keys(databaseCanali)
+        .filter(n => n.includes(filtro.toUpperCase()))
+        .sort();
+      
+      nomiFiltrati.slice(0, 50).forEach(nome => {
+        const btn = document.createElement('button');
+        btn.className = "btn-canale";
+        btn.textContent = nome;
+        btn.onclick = () => selezionaCanale(nome);
+        listaCanali.appendChild(btn);
+      });
     }
 
-    function createButton(ch, isFav = false) {
-      const li = document.createElement('li');
-      const btn = document.createElement('button');
-      btn.className = "btn-channel" + (isFav ? " fav-active" : "");
-      btn.textContent = ch.name;
-      btn.onclick = () => playSource(ch);
-      li.appendChild(btn);
-      listContainer.appendChild(li);
+    function selezionaCanale(nome) {
+      nomeCanaleAttivo = nome;
+      canaliDaProvare = databaseCanali[nome];
+      tentativoCorrente = 0;
+
+      // Aggiorna l'area dei link in fondo alla pagina
+      mostraLinkVLC(nome, canaliDaProvare);
+      
+      riproduciTentativo();
     }
 
-    async function playSource(ch) {
-      currentCh = ch;
-      statusArea.textContent = `Avvio: ${ch.name}`;
-      announce(`In riproduzione: ${ch.name}`);
-
-      if (hlsInstance) hlsInstance.destroy();
-
-      if (ch.url.includes(".m3u8") && Hls.isSupported()) {
-        hlsInstance = new Hls();
-        hlsInstance.loadSource(ch.url);
-        hlsInstance.attachMedia(video);
-        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-      } else {
-        video.src = ch.url;
-        video.play().catch(() => announce("Errore di riproduzione sul link selezionato."));
-      }
+    function mostraLinkVLC(nome, links) {
+      contenitoreLink.innerHTML = `<p>Sorgenti per <strong>${nome}</strong>:</p>`;
+      links.forEach((link, index) => {
+        const input = document.createElement('input');
+        input.className = "link-vlc";
+        input.value = link;
+        input.readOnly = true;
+        input.setAttribute('aria-label', `Link sorgente ${index + 1} per ${nome}`);
+        input.onclick = function() { this.select(); document.execCommand('copy'); comunica("Link copiato."); };
+        contenitoreLink.appendChild(input);
+      });
+      comunica("I link per VLC sono stati caricati in fondo alla pagina.");
     }
 
-    function toggleFavorite() {
-      if (!currentCh) return announce("Seleziona prima un canale.");
-      const index = favorites.findIndex(f => f.url === currentCh.url);
-      if (index === -1) {
-        favorites.push(currentCh);
-        announce(`${currentCh.name} aggiunto ai preferiti.`);
-      } else {
-        favorites.splice(index, 1);
-        announce(`${currentCh.name} rimosso.`);
-      }
-      localStorage.setItem('tv_ultra_favs', JSON.stringify(favorites));
-      renderList(mainSearch.value);
-    }
-
-    function startTimer(min) {
-      if (sleepTimer) clearTimeout(sleepTimer);
-      announce(`Timer attivo: spegnimento tra ${min} minuti.`);
-      sleepTimer = setTimeout(() => {
-        video.pause();
-        announce("Timer scaduto. Radio spenta.");
-      }, min * 60000);
-    }
-
-    // --- CONTROLLI ---
-    mainSearch.oninput = (e) => renderList(e.target.value);
-    
-    video.onvolumechange = () => localStorage.setItem('tv_ultra_vol', video.volume);
-
-    document.getElementById('fav-toggle-btn').onclick = toggleFavorite;
-    document.getElementById('sleep-btn').onclick = () => startTimer(30);
-    document.getElementById('play-pause-btn').onclick = () => {
-      if (video.paused) { video.play(); announce("Play"); }
-      else { video.pause(); announce("Pausa"); }
-    };
-
-    window.addEventListener('keydown', (e) => {
-      if (document.activeElement === mainSearch) {
-        if (e.key === 'Enter') {
-          const first = listContainer.querySelector('button');
-          if (first) first.focus();
-        }
+    function riproduciTentativo() {
+      if (tentativoCorrente >= canaliDaProvare.length) {
+        stato.textContent = "Nessun link funzionante per " + nomeCanaleAttivo;
+        comunica("Tutte le sorgenti hanno fallito.");
         return;
       }
+
+      const url = canaliDaProvare[tentativoCorrente];
+      stato.textContent = `Provo Sorgente ${tentativoCorrente + 1}...`;
       
-      switch(e.key.toLowerCase()) {
-        case 'k': document.getElementById('play-pause-btn').click(); break;
-        case 'p': toggleFavorite(); break;
-        case 't': startTimer(30); break;
-        case 'j': video.currentTime -= 15; announce("Indietro 15"); break;
-        case 'l': video.currentTime += 15; announce("Avanti 15"); break;
-        case 's': if (e.ctrlKey) { e.preventDefault(); mainSearch.focus(); announce("Cerca canale."); } break;
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({ title: nomeCanaleAttivo, artist: "TV ULTRA" });
       }
-    });
 
-    document.getElementById('vol-up-btn').onclick = () => {
-      video.volume = Math.min(1, video.volume + 0.1);
-      announce(`Volume ${Math.round(video.volume * 100)} percento`);
-    };
-    document.getElementById('vol-down-btn').onclick = () => {
-      video.volume = Math.max(0, video.volume - 0.1);
-      announce(`Volume ${Math.round(video.volume * 100)} percento`);
-    };
+      if (hls) hls.destroy();
 
-    init();
+      if (url.includes(".m3u8") && Hls.isSupported()) {
+        hls = new Hls({ manifestLoadingTimeOut: 5000 });
+        hls.loadSource(url);
+        hls.attachMedia(player);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => player.play());
+        hls.on(Hls.Events.ERROR, (e, data) => { if (data.fatal) fallimentoLink(); });
+      } else {
+        player.src = url;
+        player.play().catch(() => fallimentoLink());
+      }
+    }
+
+    function fallimentoLink() {
+      tentativoCorrente++;
+      riproduciTentativo();
+    }
+
+    player.onerror = () => { if (canaliDaProvare.length > 0) fallimentoLink(); };
+    cercaInput.oninput = (e) => renderizza(e.target.value);
+    
+    inizializza();
   </script>
 </body>
 </html>
