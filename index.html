@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TV ULTRA - Mega Database 21 Liste</title>
+  <title>TV ULTRA - Live Sync</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     body { font-family: system-ui, sans-serif; background: #000; color: #fff; margin: 0; padding: 15px; display: flex; flex-direction: column; min-height: 100vh; }
@@ -22,44 +22,40 @@
   <div id="announcer" class="sr-only" aria-live="assertive"></div>
 
   <section role="search">
-    <label for="cercaCanale">Cerca (Lazio, Boing, Regionali):</label>
-    <input type="search" id="cercaCanale" placeholder="Es: Teleuniverso, Canale 10..." autofocus>
-    <div id="stato" class="status" aria-live="polite">Inizializzazione mega database...</div>
+    <label for="cercaCanale">Cerca Canale (Sincronizzazione Live):</label>
+    <input type="search" id="cercaCanale" placeholder="Es: Rai 1, Boing, Lazio..." autofocus>
+    <div id="stato" class="status" aria-live="polite">Caricamento mega database...</div>
   </section>
 
   <div id="video-container">
-    <video id="mainPlayer" controls playsinline crossorigin="anonymous" aria-label="Lettore Video"></video>
+    <video id="mainPlayer" controls playsinline crossorigin="anonymous" aria-label="Lettore Multimediale"></video>
   </div>
 
   <nav class="lista-canali" id="listaCanali" role="list"></nav>
 
   <script>
     const LISTE_URLS = [
-      // REGIONALI & LAZIO
-      "https://raw.githubusercontent.com/ilteoood/italian-free-iptv/master/italian_free_iptv.m3u8",
-      "https://cdn.jsdelivr.net/gh/Tundrak/IPTV-Italia/iptvitaplus.v03-2024.m3u",
-      "https://cdn.jsdelivr.net/gh/Tundrak/IPTV-Italia/iptvitamin.m3u",
-      "https://gist.githubusercontent.com/greenarw/efa4568ed2fa2e53a1aec9073d027243/raw/tv_italia.m3u",
-      // FULGIONE & PANDASAT
-      "https://raw.githubusercontent.com/df-fulgi/iptv/master/italy.m3u",
-      "https://raw.githubusercontent.com/df-fulgi/iptv/master/radio.m3u",
-      "http://www.pandasat.info/iptv/kodi",
-      // LE TUE ORIGINALI
       "https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u",
-      "http://inthemix.altervista.org/tv.m3u",
+      "https://raw.githubusercontent.com/df-fulgi/iptv/master/italy.m3u",
+      "https://raw.githubusercontent.com/ilteoood/italian-free-iptv/master/italian_free_iptv.m3u8",
+      "http://www.pandasat.info/iptv/kodi",
       "https://iptv-org.github.io/iptv/languages/ita.m3u",
       "https://bit.ly/itatv",
+      "https://raw.githubusercontent.com/vittorio88/TV-Italiane/main/tv.m3u",
+      "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist/italy.m3u",
+      "https://infogw.com/it.m3u",
       "https://tivustream.website/urls/listm3u",
       "https://pastebin.com/raw/8GpCCkhf",
       "https://pastebin.com/raw/aRYDYSEQ",
-      // MEGA REPOSITORY
-      "https://raw.githubusercontent.com/vittorio88/TV-Italiane/main/tv.m3u",
-      "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist/italy.m3u",
+      "https://raw.githubusercontent.com/df-fulgi/iptv/master/radio.m3u",
+      "https://cdn.jsdelivr.net/gh/Tundrak/IPTV-Italia/iptvitaplus.v03-2024.m3u",
+      "https://cdn.jsdelivr.net/gh/Tundrak/IPTV-Italia/iptvitamin.m3u",
+      "https://gist.githubusercontent.com/greenarw/efa4568ed2fa2e53a1aec9073d027243/raw/tv_italia.m3u",
       "https://raw.githubusercontent.com/Tiptomiptv/iptv/main/ita.m3u",
-      "https://infogw.com/it.m3u",
       "https://raw.githubusercontent.com/MoatvIptv/SottoSopra/main/SottoSopra.m3u",
       "https://raw.githubusercontent.com/S-K-S-K-S/IPTV/main/italy.m3u",
-      "https://raw.githubusercontent.com/Fazzani/IPTV_Zapping/master/ita.m3u"
+      "https://raw.githubusercontent.com/Fazzani/IPTV_Zapping/master/ita.m3u",
+      "http://inthemix.altervista.org/tv.m3u"
     ];
 
     const player = document.getElementById('mainPlayer');
@@ -71,95 +67,107 @@
 
     let databaseCanali = {}; 
     let hls = null;
+    let canaleCorrente = "";
+    let indiceSorgente = 0;
 
     function comunica(testo) {
       announcer.textContent = "";
       setTimeout(() => { announcer.textContent = testo; }, 100);
     }
 
+    // Sincronizzazione automatica al Play per evitare differite
+    player.addEventListener('play', () => {
+      if (player.seekable.length > 0) {
+        player.currentTime = player.seekable.end(player.seekable.length - 1);
+        comunica("Sincronizzazione diretta completata.");
+      }
+    });
+
     async function inizializza() {
       let caricate = 0;
-      const totale = LISTE_URLS.length;
-
       for (const url of LISTE_URLS) {
         try {
-          const response = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
-          const data = await response.text();
+          const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+          const data = await r.text();
           parseM3U(data);
-        } catch (e) { console.error("Errore: " + url); }
+        } catch (e) {}
         caricate++;
-        const percentuale = Math.round((caricate / totale) * 100);
-        stato.textContent = `Caricamento: ${percentuale}%`;
-        if (percentuale % 10 === 0 || percentuale === 100) {
-          comunica(`Caricamento: ${percentuale} per cento.`);
-        }
+        let perc = Math.round((caricate / LISTE_URLS.length) * 100);
+        stato.textContent = `Caricamento: ${perc}%`;
+        if (perc % 10 === 0) comunica(`${perc} per cento.`);
       }
-
-      const totali = Object.keys(databaseCanali).length;
-      stato.textContent = `${totali} canali pronti.`;
-      comunica(`Caricamento completato. Trovati ${totali} canali.`);
+      comunica(`Pronto. Trovati ${Object.keys(databaseCanali).length} canali.`);
       renderizza("");
-      cercaInput.focus();
     }
 
     function parseM3U(data) {
       const lines = data.split('\n');
-      let nome = "";
-      lines.forEach(l => {
-        l = l.trim();
+      let nomeTemp = "";
+      for (let i = 0; i < lines.length; i++) {
+        let l = lines[i].trim();
         if (l.startsWith("#EXTINF:")) {
-          nome = l.split(',').pop().trim().toUpperCase();
-        } else if (l.startsWith("http") && nome) {
-          if (!databaseCanali[nome]) databaseCanali[nome] = [];
-          if (!databaseCanali[nome].includes(l)) databaseCanali[nome].push(l);
-          nome = "";
+          nomeTemp = l.split(',').pop().trim().replace(/\/g, "").toUpperCase();
+        } 
+        else if (l.startsWith("http") && nomeTemp) {
+          if (!databaseCanali[nomeTemp]) databaseCanali[nomeTemp] = [];
+          if (!databaseCanali[nomeTemp].includes(l)) databaseCanali[nomeTemp].unshift(l);
+          nomeTemp = ""; 
         }
-      });
+      }
     }
 
     function renderizza(filtro) {
       listaCanali.innerHTML = "";
-      const nomiFiltrati = Object.keys(databaseCanali)
-        .filter(n => n.includes(filtro.toUpperCase()))
-        .sort();
-      
-      nomiFiltrati.slice(0, 100).forEach(nome => {
+      const filtrati = Object.keys(databaseCanali).filter(n => n.includes(filtro.toUpperCase())).sort();
+      filtrati.slice(0, 50).forEach(nome => {
         const btn = document.createElement('button');
         btn.className = "btn-canale";
         btn.textContent = nome;
-        btn.onclick = () => selezionaCanale(nome);
+        btn.onclick = () => {
+          canaleCorrente = nome;
+          indiceSorgente = 0;
+          container.style.display = 'block';
+          avvia(nome, databaseCanali[nome][0]);
+        };
         listaCanali.appendChild(btn);
       });
     }
 
-    function selezionaCanale(nome) {
-      const urls = databaseCanali[nome];
-      container.style.display = 'block';
-      player.focus();
-      riproduci(nome, urls, 0);
-    }
-
-    function riproduci(nome, urls, i) {
-      if (i >= urls.length) {
-        comunica("Sorgenti esaurite.");
-        return;
+    function avvia(nome, url) {
+      stato.textContent = `Avvio: ${nome}`;
+      
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: nome,
+          artist: "TV ULTRA",
+          album: "DIRETTA LIVE"
+        });
+        // Comandi remoti per cambiare sorgente
+        navigator.mediaSession.setActionHandler('nexttrack', () => sorgenteSuccessiva());
+        navigator.mediaSession.setActionHandler('previoustrack', () => sorgenteSuccessiva());
       }
-      const url = urls[i];
-      stato.textContent = `Sorgente ${i + 1} di ${urls.length}`;
-      if (hls) hls.destroy();
 
+      if (hls) hls.destroy();
       if (url.includes(".m3u8") && Hls.isSupported()) {
-        hls = new Hls({ manifestLoadingTimeOut: 5000 });
+        hls = new Hls({ liveSyncDurationCount: 3, liveMaxLatencyDurationCount: 10 }); 
         hls.loadSource(url);
         hls.attachMedia(player);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-           player.play();
-           comunica("Avviato " + nome);
-        });
-        hls.on(Hls.Events.ERROR, (e, data) => { if (data.fatal) riproduci(nome, urls, i + 1); });
+        hls.on(Hls.Events.MANIFEST_PARSED, () => player.play());
+        hls.on(Hls.Events.ERROR, (e, d) => { if (d.fatal) sorgenteSuccessiva(); });
       } else {
         player.src = url;
-        player.play().catch(() => riproduci(nome, urls, i + 1));
+        player.play().catch(() => sorgenteSuccessiva());
+      }
+    }
+
+    function sorgenteSuccessiva() {
+      const sorgenti = databaseCanali[canaleCorrente];
+      indiceSorgente++;
+      if (indiceSorgente < sorgenti.length) {
+        comunica("Cambio sorgente.");
+        avvia(canaleCorrente, sorgenti[indiceSorgente]);
+      } else {
+        comunica("Nessun'altra sorgente per questo canale.");
       }
     }
 
