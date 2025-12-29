@@ -3,24 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TV ULTRA - Sleep Timer</title>
+  <title>TV ULTRA - Ricerca Intelligente</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     body { font-family: system-ui, sans-serif; background: #000; color: #fff; margin: 0; padding: 15px; display: flex; flex-direction: column; min-height: 100vh; }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
-    
     label { display: block; margin-bottom: 5px; font-weight: bold; color: #fbbf24; font-size: 1.2rem; }
     input, select { width: 100%; padding: 20px; margin-bottom: 15px; font-size: 1.5rem; border-radius: 12px; background: #111; color: #fff; border: 4px solid #3b82f6; box-sizing: border-box; }
-    
     .timer-section { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 2px dashed #fbbf24; }
-    .btn-timer { width: 100%; padding: 15px; background: #fbbf24; color: #000; font-weight: bold; border: none; border-radius: 8px; font-size: 1.1rem; margin-top: 5px; }
-
+    .btn-timer { width: 100%; padding: 15px; background: #fbbf24; color: #000; font-weight: bold; border: none; border-radius: 8px; font-size: 1.1rem; }
     #video-container { width: 100%; background: #000; border-radius: 12px; margin-bottom: 15px; border: 2px solid #333; display: none; }
     video { width: 100%; aspect-ratio: 16 / 9; display: block; }
-
-    .lista-canali { flex: 1; display: flex; flex-direction: column; gap: 10px; }
-    .btn-canale { width: 100%; padding: 22px; font-size: 1.4rem; text-align: left; background: #1e293b; color: white; border: 2px solid #334155; border-radius: 12px; }
-    .status { color: #fbbf24; font-weight: bold; margin-bottom: 10px; }
+    .lista-canali { flex: 1; display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
+    .btn-canale { width: 100%; padding: 22px; font-size: 1.4rem; text-align: left; background: #1e293b; color: white; border: 2px solid #334155; border-radius: 12px; cursor: pointer; }
+    .status { color: #fbbf24; font-weight: bold; margin-bottom: 10px; min-height: 1.5em; }
   </style>
 </head>
 <body>
@@ -28,17 +24,16 @@
   <div id="announcer" class="sr-only" aria-live="assertive"></div>
 
   <section role="search">
-    <label for="cercaCanale">Cerca Canale:</label>
-    <input type="search" id="cercaCanale" placeholder="Es: Rai 1, Boing, Lazio..." autofocus>
+    <label for="cercaCanale">Cerca Canale (es. Rai 1, Canale 5, Lazio):</label>
+    <input type="search" id="cercaCanale" placeholder="Scrivi numeri o lettere..." autofocus>
     
     <div class="timer-section" role="group" aria-label="Timer di spegnimento">
-      <label for="sleepTimer">Timer di spegnimento (minuti):</label>
+      <label for="sleepTimer">Spegnimento automatico:</label>
       <select id="sleepTimer">
         <option value="0">Disattivato</option>
         <option value="15">15 Minuti</option>
         <option value="30">30 Minuti</option>
         <option value="60">60 Minuti</option>
-        <option value="90">90 Minuti</option>
       </select>
       <button class="btn-timer" id="btnAvviaTimer">Attiva Timer</button>
     </div>
@@ -47,14 +42,14 @@
   </section>
 
   <div id="video-container">
-    <video id="mainPlayer" controls playsinline crossorigin="anonymous"></video>
+    <video id="mainPlayer" controls playsinline crossorigin="anonymous" aria-label="Lettore"></video>
   </div>
 
   <nav class="lista-canali" id="listaCanali" role="list"></nav>
 
   <script>
     const LISTE_URLS = [
-      "https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u",
+      "https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u", // Priorità 1 
       "https://raw.githubusercontent.com/df-fulgi/iptv/master/italy.m3u",
       "https://raw.githubusercontent.com/ilteoood/italian-free-iptv/master/italian_free_iptv.m3u8",
       "http://www.pandasat.info/iptv/kodi",
@@ -95,29 +90,11 @@
       setTimeout(() => { announcer.textContent = testo; }, 100);
     }
 
-    // GESTIONE TIMER
-    btnTimer.onclick = () => {
-      const minuti = parseInt(selectTimer.value);
-      if (sleepTimeout) clearTimeout(sleepTimeout);
-
-      if (minuti > 0) {
-        comunica(`Timer attivato per ${minuti} minuti. La riproduzione si fermerà automaticamente.`);
-        sleepTimeout = setTimeout(() => {
-          player.pause();
-          comunica("Il timer è scaduto. Riproduzione interrotta.");
-          if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "none";
-        }, minuti * 60000);
-      } else {
-        comunica("Timer disattivato.");
-      }
+    // MAPPA PER RICERCA INTELLIGENTE 
+    const mappaNumeri = {
+      '0': 'ZERO', '1': 'UNO', '2': 'DUE', '3': 'TRE', '4': 'QUATTRO',
+      '5': 'CINQUE', '6': 'SEI', '7': 'SETTE', '8': 'OTTO', '9': 'NOVE'
     };
-
-    // Sincronizzazione Live al Play
-    player.addEventListener('play', () => {
-      if (player.seekable.length > 0) {
-        player.currentTime = player.seekable.end(player.seekable.length - 1);
-      }
-    });
 
     async function inizializza() {
       let caricate = 0;
@@ -132,7 +109,7 @@
         stato.textContent = `Caricamento: ${perc}%`;
         if (perc % 10 === 0) comunica(`${perc} per cento.`);
       }
-      comunica(`Caricamento completato.`);
+      comunica(`Caricamento completato. Trovati ${Object.keys(databaseCanali).length} canali.`);
       renderizza("");
     }
 
@@ -146,16 +123,29 @@
         } 
         else if (l.startsWith("http") && nomeTemp) {
           if (!databaseCanali[nomeTemp]) databaseCanali[nomeTemp] = [];
-          databaseCanali[nomeTemp].unshift(l);
+          databaseCanali[nomeTemp].unshift(l); // Priorità alla tua lista 
           nomeTemp = ""; 
         }
       }
     }
 
+    // FUNZIONE DI RICERCA INTELLIGENTE AGGIORNATA 
     function renderizza(filtro) {
+      const f = filtro.toUpperCase();
+      let fAlt = f;
+
+      // Scambia numero con parola o viceversa nel filtro 
+      for (const [num, parola] of Object.entries(mappaNumeri)) {
+        if (f.includes(num)) fAlt = f.replace(num, parola);
+        else if (f.includes(parola)) fAlt = f.replace(parola, num);
+      }
+
       listaCanali.innerHTML = "";
-      const filtrati = Object.keys(databaseCanali).filter(n => n.includes(filtro.toUpperCase())).sort();
-      filtrati.slice(0, 50).forEach(nome => {
+      const filtrati = Object.keys(databaseCanali).filter(nome => 
+        nome.includes(f) || (fAlt !== f && nome.includes(fAlt))
+      ).sort();
+
+      filtrati.slice(0, 80).forEach(nome => {
         const btn = document.createElement('button');
         btn.className = "btn-canale";
         btn.textContent = nome;
@@ -174,13 +164,24 @@
       }
       if (hls) hls.destroy();
       if (url.includes(".m3u8") && Hls.isSupported()) {
-        hls = new Hls(); hls.loadSource(url); hls.attachMedia(player);
+        hls = new Hls({ liveSyncDuration: 0 }); // Sincronizzazione Live 
+        hls.loadSource(url); hls.attachMedia(player);
         hls.on(Hls.Events.MANIFEST_PARSED, () => { player.play(); comunica("Avviato " + nome); });
       } else {
         player.src = url;
         player.play().catch(() => comunica("Errore sorgente."));
       }
     }
+
+    // Gestione Timer
+    btnTimer.onclick = () => {
+      const min = parseInt(selectTimer.value);
+      if (sleepTimeout) clearTimeout(sleepTimeout);
+      if (min > 0) {
+        comunica(`Spegnimento tra ${min} minuti.`);
+        sleepTimeout = setTimeout(() => { player.pause(); comunica("Timer scaduto."); }, min * 60000);
+      } else comunica("Timer rimosso.");
+    };
 
     cercaInput.oninput = (e) => renderizza(e.target.value);
     inizializza();
