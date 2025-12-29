@@ -1,190 +1,210 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TV ULTRA - Ricerca Intelligente</title>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <style>
-    body { font-family: system-ui, sans-serif; background: #000; color: #fff; margin: 0; padding: 15px; display: flex; flex-direction: column; min-height: 100vh; }
-    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
-    label { display: block; margin-bottom: 5px; font-weight: bold; color: #fbbf24; font-size: 1.2rem; }
-    input, select { width: 100%; padding: 20px; margin-bottom: 15px; font-size: 1.5rem; border-radius: 12px; background: #111; color: #fff; border: 4px solid #3b82f6; box-sizing: border-box; }
-    .timer-section { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 2px dashed #fbbf24; }
-    .btn-timer { width: 100%; padding: 15px; background: #fbbf24; color: #000; font-weight: bold; border: none; border-radius: 8px; font-size: 1.1rem; }
-    #video-container { width: 100%; background: #000; border-radius: 12px; margin-bottom: 15px; border: 2px solid #333; display: none; }
-    video { width: 100%; aspect-ratio: 16 / 9; display: block; }
-    .lista-canali { flex: 1; display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
-    .btn-canale { width: 100%; padding: 22px; font-size: 1.4rem; text-align: left; background: #1e293b; color: white; border: 2px solid #334155; border-radius: 12px; cursor: pointer; }
-    .status { color: #fbbf24; font-weight: bold; margin-bottom: 10px; min-height: 1.5em; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TV ULTRA PRO - Valentina</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #000; color: #fff; margin: 0; padding: 15px; }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+        
+        .panel { background: #1a1a1a; padding: 20px; border-radius: 15px; border: 2px solid #333; margin-bottom: 20px; }
+        .setup-panel { border-color: #3b82f6; }
+        .record-panel { border-color: #fbbf24; }
+        
+        label { display: block; margin: 15px 0 5px; color: #fbbf24; font-weight: bold; font-size: 1.2rem; }
+        input, select { width: 100%; padding: 18px; font-size: 1.4rem; border-radius: 10px; background: #111; color: #fff; border: 2px solid #444; box-sizing: border-box; }
+        
+        .btn { width: 100%; padding: 20px; font-size: 1.3rem; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; margin-top: 10px; }
+        .btn-primary { background: #fbbf24; color: #000; }
+        .btn-secondary { background: #10b981; color: #fff; }
+        .btn-channel { text-align: left; background: #1e293b; color: #fff; margin-bottom: 8px; border-left: 5px solid #3b82f6; }
+        
+        #playerContainer { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 12px; overflow: hidden; display: none; margin-bottom: 15px; border: 1px solid #333; }
+        video { width: 100%; height: 100%; }
+
+        details { background: #222; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #444; }
+        summary { font-size: 1.2rem; font-weight: bold; color: #fbbf24; cursor: pointer; }
+    </style>
 </head>
 <body>
 
-  <div id="announcer" class="sr-only" aria-live="assertive"></div>
+    <div id="announcer" class="sr-only" aria-live="assertive"></div>
 
-  <section role="search">
-    <label for="cercaCanale">Cerca Canale (es. Rai 1, Canale 5, Lazio):</label>
-    <input type="search" id="cercaCanale" placeholder="Scrivi numeri o lettere..." autofocus>
-    
-    <div class="timer-section" role="group" aria-label="Timer di spegnimento">
-      <label for="sleepTimer">Spegnimento automatico:</label>
-      <select id="sleepTimer">
-        <option value="0">Disattivato</option>
-        <option value="15">15 Minuti</option>
-        <option value="30">30 Minuti</option>
-        <option value="60">60 Minuti</option>
-      </select>
-      <button class="btn-timer" id="btnAvviaTimer">Attiva Timer</button>
-    </div>
+    <h1 class="sr-only">TV ULTRA PRO - Applicazione Valentina</h1>
 
-    <div id="stato" class="status" aria-live="polite">Caricamento 21 liste...</div>
-  </section>
+    <details class="setup-panel" open>
+        <summary>⚙️ Configurazione Server</summary>
+        <div role="group" aria-label="Impostazioni Server">
+            <label for="serverUrl">Indirizzo Server Hetzner:</label>
+            <input type="url" id="serverUrl" value="http://138.199.196.24:3000">
+            
+            <label for="serverPin">PIN Segreto:</label>
+            <input type="password" id="serverPin" value="42944">
+        </div>
+    </details>
 
-  <div id="video-container">
-    <video id="mainPlayer" controls playsinline crossorigin="anonymous" aria-label="Lettore"></video>
-  </div>
+    <section class="panel" role="search">
+        <label for="searchBox">Cerca Canale (es. Rai, Mediaset, Lazio):</label>
+        <input type="search" id="searchBox" placeholder="Scrivi il nome...">
+        <div id="status" style="color:#fbbf24; margin-top:10px; font-weight:bold;" aria-live="polite">Caricamento liste...</div>
+    </section>
 
-  <nav class="lista-canali" id="listaCanali" role="list"></nav>
+    <section>
+        <div id="playerContainer">
+            <video id="videoPlayer" controls playsinline crossorigin="anonymous"></video>
+        </div>
+        <button id="nextSourceBtn" class="btn btn-secondary" style="display:none;">⚠️ Audio scarso? Prova altra sorgente</button>
+    </section>
 
-  <script>
-    const LISTE_URLS = [
-      "https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u", // Priorità 1 
-      "https://raw.githubusercontent.com/df-fulgi/iptv/master/italy.m3u",
-      "https://raw.githubusercontent.com/ilteoood/italian-free-iptv/master/italian_free_iptv.m3u8",
-      "http://www.pandasat.info/iptv/kodi",
-      "https://iptv-org.github.io/iptv/languages/ita.m3u",
-      "https://bit.ly/itatv",
-      "https://raw.githubusercontent.com/vittorio88/TV-Italiane/main/tv.m3u",
-      "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist/italy.m3u",
-      "https://infogw.com/it.m3u",
-      "https://tivustream.website/urls/listm3u",
-      "https://pastebin.com/raw/8GpCCkhf",
-      "https://pastebin.com/raw/aRYDYSEQ",
-      "https://raw.githubusercontent.com/df-fulgi/iptv/master/radio.m3u",
-      "https://cdn.jsdelivr.net/gh/Tundrak/IPTV-Italia/iptvitaplus.v03-2024.m3u",
-      "https://cdn.jsdelivr.net/gh/Tundrak/IPTV-Italia/iptvitamin.m3u",
-      "https://gist.githubusercontent.com/greenarw/efa4568ed2fa2e53a1aec9073d027243/raw/tv_italia.m3u",
-      "https://raw.githubusercontent.com/Tiptomiptv/iptv/main/ita.m3u",
-      "https://raw.githubusercontent.com/MoatvIptv/SottoSopra/main/SottoSopra.m3u",
-      "https://raw.githubusercontent.com/S-K-S-K-S/IPTV/main/italy.m3u",
-      "https://raw.githubusercontent.com/Fazzani/IPTV_Zapping/master/ita.m3u",
-      "http://inthemix.altervista.org/tv.m3u"
-    ];
+    <section id="recordPanel" class="panel record-panel" style="display:none;">
+        <h2 id="currentChannelLabel">Registrazione</h2>
+        
+        <label for="regHour">Ora di inizio:</label>
+        <select id="regHour" aria-label="Seleziona ora"></select>
 
-    const player = document.getElementById('mainPlayer');
-    const container = document.getElementById('video-container');
-    const cercaInput = document.getElementById('cercaCanale');
-    const listaCanali = document.getElementById('listaCanali');
-    const stato = document.getElementById('stato');
-    const announcer = document.getElementById('announcer');
-    const selectTimer = document.getElementById('sleepTimer');
-    const btnTimer = document.getElementById('btnAvviaTimer');
+        <label for="regMin">Minuto di inizio (ogni 5 minuti):</label>
+        <select id="regMin" aria-label="Seleziona minuti"></select>
 
-    let databaseCanali = {}; 
-    let hls = null;
-    let sleepTimeout = null;
+        <label for="regDuration">Durata totale (minuti):</label>
+        <input type="number" id="regDuration" value="60" aria-label="Durata in minuti">
 
-    function comunica(testo) {
-      announcer.textContent = "";
-      setTimeout(() => { announcer.textContent = testo; }, 100);
-    }
+        <button id="confirmRecordBtn" class="btn btn-primary">Pianifica Registrazione su Hetzner</button>
+    </section>
 
-    // MAPPA PER RICERCA INTELLIGENTE 
-    const mappaNumeri = {
-      '0': 'ZERO', '1': 'UNO', '2': 'DUE', '3': 'TRE', '4': 'QUATTRO',
-      '5': 'CINQUE', '6': 'SEI', '7': 'SETTE', '8': 'OTTO', '9': 'NOVE'
-    };
+    <nav id="channelList" aria-label="Elenco canali"></nav>
 
-    async function inizializza() {
-      let caricate = 0;
-      for (const url of LISTE_URLS) {
-        try {
-          const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
-          const data = await r.text();
-          parseM3U(data);
-        } catch (e) {}
-        caricate++;
-        let perc = Math.round((caricate / LISTE_URLS.length) * 100);
-        stato.textContent = `Caricamento: ${perc}%`;
-        if (perc % 10 === 0) comunica(`${perc} per cento.`);
-      }
-      comunica(`Caricamento completato. Trovati ${Object.keys(databaseCanali).length} canali.`);
-      renderizza("");
-    }
+    <script>
+        const PLAYLISTS = [
+            "https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u",
+            "https://raw.githubusercontent.com/df-fulgi/iptv/master/italy.m3u",
+            "https://iptv-org.github.io/iptv/languages/ita.m3u"
+        ];
 
-    function parseM3U(data) {
-      const lines = data.split('\n');
-      let nomeTemp = "";
-      for (let i = 0; i < lines.length; i++) {
-        let l = lines[i].trim();
-        if (l.startsWith("#EXTINF:")) {
-          nomeTemp = l.split(',').pop().trim().replace(/\/g, "").toUpperCase();
-        } 
-        else if (l.startsWith("http") && nomeTemp) {
-          if (!databaseCanali[nomeTemp]) databaseCanali[nomeTemp] = [];
-          databaseCanali[nomeTemp].unshift(l); // Priorità alla tua lista 
-          nomeTemp = ""; 
+        let channelsDb = {};
+        let activeChannel = "";
+        let sourceIndex = 0;
+        let hlsInstance = null;
+
+        function comunica(t) {
+            const a = document.getElementById('announcer');
+            a.textContent = "";
+            setTimeout(() => { a.textContent = t; }, 100);
         }
-      }
-    }
 
-    // FUNZIONE DI RICERCA INTELLIGENTE AGGIORNATA 
-    function renderizza(filtro) {
-      const f = filtro.toUpperCase();
-      let fAlt = f;
+        // Popolamento selettori (passi da 5 min)
+        const hSel = document.getElementById('regHour');
+        for(let i=0; i<24; i++) {
+            let v = i.toString().padStart(2, '0');
+            hSel.add(new Option(v, v));
+        }
+        const mSel = document.getElementById('regMin');
+        for(let i=0; i<60; i+=5) {
+            let v = i.toString().padStart(2, '0');
+            mSel.add(new Option(v, v));
+        }
 
-      // Scambia numero con parola o viceversa nel filtro 
-      for (const [num, parola] of Object.entries(mappaNumeri)) {
-        if (f.includes(num)) fAlt = f.replace(num, parola);
-        else if (f.includes(parola)) fAlt = f.replace(parola, num);
-      }
+        async function init() {
+            for (const url of PLAYLISTS) {
+                try {
+                    const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+                    const txt = await r.text();
+                    parseM3U(txt);
+                } catch (e) {}
+            }
+            document.getElementById('status').textContent = "Pronto. Valentina, scegli un canale.";
+            render("");
+        }
 
-      listaCanali.innerHTML = "";
-      const filtrati = Object.keys(databaseCanali).filter(nome => 
-        nome.includes(f) || (fAlt !== f && nome.includes(fAlt))
-      ).sort();
+        function parseM3U(txt) {
+            const lines = txt.split('\n');
+            let name = "";
+            lines.forEach(l => {
+                if (l.startsWith("#EXTINF:")) name = l.split(',').pop().trim().toUpperCase();
+                else if (l.startsWith("http") && name) {
+                    if (!channelsDb[name]) channelsDb[name] = [];
+                    channelsDb[name].push(l.trim());
+                }
+            });
+        }
 
-      filtrati.slice(0, 80).forEach(nome => {
-        const btn = document.createElement('button');
-        btn.className = "btn-canale";
-        btn.textContent = nome;
-        btn.onclick = () => {
-          container.style.display = 'block';
-          avvia(nome, databaseCanali[nome][0]);
+        function render(f) {
+            const list = document.getElementById('channelList');
+            list.innerHTML = "";
+            Object.keys(channelsDb).filter(k => k.includes(f.toUpperCase())).sort().slice(0, 40).forEach(n => {
+                const b = document.createElement('button');
+                b.className = "btn btn-channel";
+                b.textContent = n;
+                b.onclick = () => play(n);
+                list.appendChild(b);
+            });
+        }
+
+        function play(n) {
+            activeChannel = n;
+            sourceIndex = 0;
+            loadSource(channelsDb[n][0]);
+            
+            document.getElementById('playerContainer').style.display = "block";
+            document.getElementById('recordPanel').style.display = "block";
+            document.getElementById('nextSourceBtn').style.display = channelsDb[n].length > 1 ? "block" : "none";
+            document.getElementById('currentChannelLabel').textContent = "Canale: " + n;
+            comunica("In onda: " + n + ". Usa il pannello sotto il video per registrare.");
+        }
+
+        function loadSource(url) {
+            const video = document.getElementById('videoPlayer');
+            if (hlsInstance) { hlsInstance.destroy(); }
+            
+            if (Hls.isSupported()) {
+                hlsInstance = new Hls();
+                hlsInstance.loadSource(url);
+                hlsInstance.attachMedia(video);
+                hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+            } else {
+                video.src = url;
+                video.play();
+            }
+        }
+
+        document.getElementById('nextSourceBtn').onclick = () => {
+            sourceIndex = (sourceIndex + 1) % channelsDb[activeChannel].length;
+            loadSource(channelsDb[activeChannel][sourceIndex]);
+            comunica("Sorgente cambiata. Tentativo numero " + (sourceIndex + 1));
         };
-        listaCanali.appendChild(btn);
-      });
-    }
 
-    function avvia(nome, url) {
-      stato.textContent = `In onda: ${nome}`;
-      if ('mediaSession' in navigator) {
-        navigator.mediaSession.metadata = new MediaMetadata({ title: nome, artist: "TV ULTRA" });
-      }
-      if (hls) hls.destroy();
-      if (url.includes(".m3u8") && Hls.isSupported()) {
-        hls = new Hls({ liveSyncDuration: 0 }); // Sincronizzazione Live 
-        hls.loadSource(url); hls.attachMedia(player);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => { player.play(); comunica("Avviato " + nome); });
-      } else {
-        player.src = url;
-        player.play().catch(() => comunica("Errore sorgente."));
-      }
-    }
+        document.getElementById('confirmRecordBtn').onclick = async () => {
+            const server = document.getElementById('serverUrl').value;
+            const pin = document.getElementById('serverPin').value;
+            
+            const payload = {
+                url: channelsDb[activeChannel][sourceIndex],
+                channelName: activeChannel,
+                time: `${hSel.value}:${mSel.value}`,
+                duration: document.getElementById('regDuration').value,
+                pin: pin,
+                backupUrls: channelsDb[activeChannel]
+            };
 
-    // Gestione Timer
-    btnTimer.onclick = () => {
-      const min = parseInt(selectTimer.value);
-      if (sleepTimeout) clearTimeout(sleepTimeout);
-      if (min > 0) {
-        comunica(`Spegnimento tra ${min} minuti.`);
-        sleepTimeout = setTimeout(() => { player.pause(); comunica("Timer scaduto."); }, min * 60000);
-      } else comunica("Timer rimosso.");
-    };
+            try {
+                const r = await fetch(`${server}/api/record-scheduled`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (r.ok) {
+                    comunica("Successo! Registrazione di " + activeChannel + " programmata alle ore " + payload.time);
+                } else {
+                    comunica("Errore. Controlla il PIN nel server.");
+                }
+            } catch (e) {
+                comunica("Server Hetzner non raggiungibile.");
+            }
+        };
 
-    cercaInput.oninput = (e) => renderizza(e.target.value);
-    inizializza();
-  </script>
+        document.getElementById('searchBox').oninput = (e) => render(e.target.value);
+        init();
+    </script>
 </body>
 </html>
