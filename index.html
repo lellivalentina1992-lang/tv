@@ -69,7 +69,7 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="p-5 rounded-xl panel-bg border-yellow-600 border-2">
-                    <h2 class="text-xl font-bold text-yellow-500 mb-4">🔴 Registra su Hetzner</h2>
+                    <h2 class="text-xl font-bold text-yellow-500 mb-4">🔴 Registra su Server</h2>
                     <div class="flex gap-3 mb-4">
                         <div class="flex-1">
                             <label class="text-xs font-bold text-gray-400 block mb-1">Ora</label>
@@ -84,15 +84,28 @@
                 </div>
 
                 <div class="p-5 rounded-xl panel-bg border-gray-700 border text-sm">
-                    <h2 class="text-lg font-bold text-gray-400 mb-3">⚙️ Configurazione Server</h2>
-                    <input type="url" id="serverUrl" value="http://138.199.196.24:3000" class="w-full bg-black p-3 rounded border border-gray-800 mb-3" placeholder="URL Server">
-                    <input type="password" id="serverPin" value="42944" class="w-full bg-black p-3 rounded border border-gray-800" placeholder="PIN Segreto">
+                    <h2 class="text-lg font-bold text-gray-400 mb-3">ℹ️ Info Configurazione</h2>
+                    <div class="space-y-2 text-gray-300">
+                        <p><span class="font-bold text-yellow-500">Server:</span> Configurato nel codice</p>
+                        <p><span class="font-bold text-yellow-500">Proxy M3U:</span> Attivo</p>
+                        <p><span class="font-bold text-yellow-500">Cache:</span> 1 ora</p>
+                        <p class="text-xs text-gray-500 mt-4">Per modificare il server, edita la sezione CONFIG nel codice JavaScript</p>
+                    </div>
                 </div>
             </div>
         </section>
     </main>
 
     <script>
+        // ==============================
+        // 🔧 CONFIGURAZIONE
+        // ==============================
+        const CONFIG = {
+            // Cambia questo URL con il tuo server!
+            SERVER_URL: 'http://138.199.196.24:3000',
+            PIN: '42944'
+        };
+
         let channelsDb = [];
         let hls = null;
         const video = document.getElementById('videoPlayer');
@@ -120,19 +133,31 @@
         const mS = document.getElementById('regMin');
         for(let i=0; i<60; i+=5) mS.add(new Option(i.toString().padStart(2,'0'), i.toString().padStart(2,'0')));
 
-        // Caricamento Liste
+        // ✅ NUOVA FUNZIONE: Usa il TUO server Hetzner invece di corsproxy.io
         document.getElementById('preset-buttons').onclick = async (e) => {
             const btn = e.target.closest('button');
             if (!btn) return;
-            document.getElementById('status').textContent = "Caricamento...";
+            document.getElementById('status').textContent = "⚡ Caricamento dal server...";
             try {
-                const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(btn.dataset.url)}`);
+                // 🚀 Chiama il proxy sul TUO server
+                const r = await fetch(`${CONFIG.SERVER_URL}/api/proxy-m3u`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: btn.dataset.url })
+                });
+                
+                if (!r.ok) throw new Error('Server error');
+                
                 const txt = await r.text();
                 parseM3U(txt);
                 renderChannels("");
-                document.getElementById('status').textContent = "Lista: " + btn.textContent;
+                document.getElementById('status').textContent = "✅ Lista: " + btn.textContent;
                 comunica("Caricata lista " + btn.textContent + " con " + channelsDb.length + " canali.");
-            } catch (err) { comunica("Errore nel caricamento della lista selezionata."); }
+            } catch (err) { 
+                console.error('Errore caricamento:', err);
+                comunica("❌ Errore nel caricamento della lista. Verifica il server."); 
+                document.getElementById('status').textContent = "❌ Errore caricamento";
+            }
         };
 
         function parseM3U(txt) {
@@ -204,16 +229,16 @@
                 channelName: window.activeName, 
                 time: `${hS.value}:${mS.value}`, 
                 duration: "60", 
-                pin: document.getElementById('serverPin').value 
+                pin: CONFIG.PIN
             };
             try {
-                const r = await fetch(`${document.getElementById('serverUrl').value}/api/record-scheduled`, { 
+                const r = await fetch(`${CONFIG.SERVER_URL}/api/record-scheduled`, { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
                     body: JSON.stringify(payload) 
                 });
                 comunica(r.ok ? "Registrazione programmata con successo!" : "Errore: controlla il PIN o il server.");
-            } catch (e) { comunica("Impossibile connettersi al server Hetzner."); }
+            } catch (e) { comunica("Impossibile connettersi al server."); }
         };
     </script>
 </body>
