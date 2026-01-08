@@ -493,32 +493,58 @@
                     resolve(false);
                 }, 8000); // 8 secondi timeout
 
-                if (url.includes(".m3u8") && Hls.isSupported()) {
-                    hls = new Hls({
-                        enableWorker: true,
-                        maxLoadingDelay: 4,
-                        manifestLoadingTimeOut: 10000,
-                        manifestLoadingMaxRetry: 1
-                    });
-                    
-                    hls.loadSource(url);
-                    hls.attachMedia(video);
-                    
-                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                        clearTimeout(timeout);
-                        video.play()
-                            .then(() => resolve(true))
-                            .catch(() => resolve(false));
-                    });
-                    
-                    hls.on(Hls.Events.ERROR, (event, data) => {
-                        if (data.fatal) {
+                if (url.includes(".m3u8")) {
+                    // Prova HLS.js se supportato
+                    if (Hls.isSupported()) {
+                        console.log("Uso HLS.js per", source);
+                        hls = new Hls({
+                            enableWorker: true,
+                            maxLoadingDelay: 4,
+                            manifestLoadingTimeOut: 10000,
+                            manifestLoadingMaxRetry: 1
+                        });
+                        
+                        hls.loadSource(url);
+                        hls.attachMedia(video);
+                        
+                        hls.on(Hls.Events.MANIFEST_PARSED, () => {
                             clearTimeout(timeout);
-                            console.log(`Errore HLS fatale: ${data.type} - ${data.details}`);
+                            video.play()
+                                .then(() => resolve(true))
+                                .catch(() => resolve(false));
+                        });
+                        
+                        hls.on(Hls.Events.ERROR, (event, data) => {
+                            if (data.fatal) {
+                                clearTimeout(timeout);
+                                console.log(`Errore HLS fatale: ${data.type} - ${data.details}`);
+                                resolve(false);
+                            }
+                        });
+                    } 
+                    // Altrimenti prova player nativo (Safari, iOS)
+                    else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                        console.log("Uso player nativo HLS per", source);
+                        video.src = url;
+                        video.onloadeddata = () => {
+                            clearTimeout(timeout);
+                            video.play()
+                                .then(() => resolve(true))
+                                .catch(() => resolve(false));
+                        };
+                        video.onerror = () => {
+                            clearTimeout(timeout);
                             resolve(false);
-                        }
-                    });
+                        };
+                    }
+                    else {
+                        console.log("HLS non supportato per", source);
+                        clearTimeout(timeout);
+                        resolve(false);
+                    }
                 } else {
+                    // Non è HLS, usa player normale
+                    console.log("Uso player normale per", source);
                     video.src = url;
                     video.onloadeddata = () => {
                         clearTimeout(timeout);
