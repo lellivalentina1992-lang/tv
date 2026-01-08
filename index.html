@@ -127,13 +127,39 @@
                 <button id="muteBtn" class="btn-action">Muto</button>
             </div>
 
-            <div class="p-5 rounded-xl panel-bg border-gray-700 border text-sm">
-                <h2 class="text-lg font-bold text-gray-400 mb-3">ℹ️ Info Ricerca</h2>
-                <div class="space-y-2 text-gray-300">
-                    <p><span class="font-bold text-yellow-500">Liste disponibili:</span> 14</p>
-                    <p><span class="font-bold text-yellow-500">Proxy CORS:</span> 3 con fallback automatico</p>
-                    <p><span class="font-bold text-yellow-500">Ricerca:</span> Automatica</p>
-                    <p class="text-xs text-gray-500 mt-4">Versione GitHub con HTTPS - Sistema multi-proxy per massima affidabilità</p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="p-5 rounded-xl panel-bg border-yellow-600 border-2">
+                    <h2 class="text-xl font-bold text-yellow-500 mb-4">🔴 Registra su Server</h2>
+                    <div class="mb-4">
+                        <label class="text-xs font-bold text-gray-400 block mb-1">Server Hetzner (lascia vuoto per disabilitare)</label>
+                        <input type="url" id="serverUrl" class="w-full bg-black p-2 rounded border border-gray-700 text-sm" placeholder="http://138.199.196.24:3000" value="http://138.199.196.24:3000">
+                    </div>
+                    <div class="mb-4">
+                        <label class="text-xs font-bold text-gray-400 block mb-1">PIN Server (opzionale - solo se il tuo server lo richiede)</label>
+                        <input type="text" id="serverPin" class="w-full bg-black p-2 rounded border border-gray-700 text-sm" placeholder="Lascia vuoto se non hai PIN" value="">
+                    </div>
+                    <div class="flex gap-3 mb-4">
+                        <div class="flex-1">
+                            <label class="text-xs font-bold text-gray-400 block mb-1">Ora</label>
+                            <select id="regHour" class="w-full bg-black p-3 rounded border border-gray-700"></select>
+                        </div>
+                        <div class="flex-1">
+                            <label class="text-xs font-bold text-gray-400 block mb-1">Minuti</label>
+                            <select id="regMin" class="w-full bg-black p-3 rounded border border-gray-700"></select>
+                        </div>
+                    </div>
+                    <button id="confirmRecordBtn" class="w-full bg-yellow-600 hover:bg-yellow-700 text-black font-bold py-4 rounded-xl transition-colors">Pianifica Registrazione</button>
+                </div>
+
+                <div class="p-5 rounded-xl panel-bg border-gray-700 border text-sm">
+                    <h2 class="text-lg font-bold text-gray-400 mb-3">ℹ️ Info Ricerca</h2>
+                    <div class="space-y-2 text-gray-300">
+                        <p><span class="font-bold text-yellow-500">Liste disponibili:</span> 14</p>
+                        <p><span class="font-bold text-yellow-500">Proxy CORS:</span> 3 con fallback automatico</p>
+                        <p><span class="font-bold text-yellow-500">Ricerca:</span> Automatica</p>
+                        <p><span class="font-bold text-yellow-500">Registrazione:</span> <span id="recordStatus">Configura server</span></p>
+                        <p class="text-xs text-gray-500 mt-4">Versione GitHub con HTTPS - Sistema multi-proxy per massima affidabilità. Configura il server Hetzner per abilitare la registrazione.</p>
+                    </div>
                 </div>
             </div>
         </section>
@@ -162,6 +188,44 @@
         let hls = null;
         const video = document.getElementById('videoPlayer');
         const searchProgress = document.getElementById('searchProgress');
+
+        // Timer per registrazione (scatti di 5 minuti)
+        const hS = document.getElementById('regHour');
+        for(let i=0; i<24; i++) hS.add(new Option(i.toString().padStart(2,'0'), i.toString().padStart(2,'0')));
+        const mS = document.getElementById('regMin');
+        for(let i=0; i<60; i+=5) mS.add(new Option(i.toString().padStart(2,'0'), i.toString().padStart(2,'0')));
+
+        // Verifica server all'avvio
+        document.getElementById('serverUrl').addEventListener('change', checkServer);
+        document.getElementById('serverUrl').addEventListener('blur', checkServer);
+        
+        async function checkServer() {
+            const serverUrl = document.getElementById('serverUrl').value.trim();
+            const statusEl = document.getElementById('recordStatus');
+            
+            if (!serverUrl) {
+                statusEl.textContent = 'Disabilitato';
+                statusEl.style.color = '#9ca3af';
+                return;
+            }
+            
+            try {
+                const r = await fetch(`${serverUrl}/health`, { method: 'GET' });
+                if (r.ok) {
+                    statusEl.textContent = '✅ Attivo';
+                    statusEl.style.color = '#10b981';
+                } else {
+                    statusEl.textContent = '❌ Server offline';
+                    statusEl.style.color = '#ef4444';
+                }
+            } catch {
+                statusEl.textContent = '❌ Non raggiungibile';
+                statusEl.style.color = '#ef4444';
+            }
+        }
+        
+        // Verifica server all'avvio
+        setTimeout(checkServer, 1000);
 
         function comunica(t) {
             const a = document.getElementById('announcer');
@@ -459,20 +523,23 @@
                 
                 console.log(`Provo: ${channel.source} - ${channel.url.substring(0, 50)}`);
                 
-                // Prova a riprodurre
-                const success = await tryPlay(channel.name, channel.url, channel.source);
+                // Prova a riprodurre usando la funzione ORIGINALE
+                playChannelDirect(channel.name, channel.url);
                 
-                if (success) {
+                // Aspetta un po' per vedere se si carica
+                await new Promise(r => setTimeout(r, 3000));
+                
+                // Controlla se sta riproducendo
+                if (!video.paused || video.readyState > 2) {
                     comunica(`In riproduzione da: ${channel.source}`);
                     document.getElementById('status').textContent = `✅ ${channelName} (${channel.source})`;
+                    window.activeUrl = channel.url;
+                    window.activeName = channel.name;
                     return; // Trovato uno che funziona!
                 }
-                
-                // Aspetta un po' prima del prossimo tentativo
-                await new Promise(r => setTimeout(r, 500));
             }
 
-            // Nessuno ha funzionato - salva l'ultimo tentato per il pulsante Copia
+            // Nessuno ha funzionato - salva l'ultimo tentato
             window.activeUrl = lastAttemptedUrl;
             window.activeName = channelName;
             
@@ -480,102 +547,42 @@
             document.getElementById('status').textContent = `❌ ${channelName} non disponibile (puoi copiare l'ultimo link)`;
         }
 
-        // 🎥 Tenta di riprodurre un singolo stream
-        function tryPlay(name, url, source) {
-            return new Promise((resolve) => {
-                window.activeUrl = url;
-                window.activeName = name;
-                
-                if (hls) hls.destroy();
-                
-                const timeout = setTimeout(() => {
-                    console.log(`Timeout per ${source}`);
-                    resolve(false);
-                }, 8000); // 8 secondi timeout
-
-                if (url.includes(".m3u8")) {
-                    // Prova HLS.js se supportato
-                    if (Hls.isSupported()) {
-                        console.log("Uso HLS.js per", source);
-                        hls = new Hls({
-                            enableWorker: true,
-                            maxLoadingDelay: 4,
-                            manifestLoadingTimeOut: 10000,
-                            manifestLoadingMaxRetry: 1
-                        });
-                        
-                        hls.loadSource(url);
-                        hls.attachMedia(video);
-                        
-                        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                            clearTimeout(timeout);
-                            video.play()
-                                .then(() => resolve(true))
-                                .catch(() => resolve(false));
-                        });
-                        
-                        hls.on(Hls.Events.ERROR, (event, data) => {
-                            if (data.fatal) {
-                                clearTimeout(timeout);
-                                console.log(`Errore HLS fatale: ${data.type} - ${data.details}`);
-                                resolve(false);
-                            }
-                        });
-                    } 
-                    // Altrimenti prova player nativo (Safari, iOS)
-                    else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                        console.log("Uso player nativo HLS per", source);
-                        video.src = url;
-                        video.onloadeddata = () => {
-                            clearTimeout(timeout);
-                            video.play()
-                                .then(() => resolve(true))
-                                .catch(() => resolve(false));
-                        };
-                        video.onerror = () => {
-                            clearTimeout(timeout);
-                            resolve(false);
-                        };
-                    }
-                    else {
-                        console.log("HLS non supportato per", source);
-                        clearTimeout(timeout);
-                        resolve(false);
-                    }
-                } else {
-                    // Non è HLS, usa player normale
-                    console.log("Uso player normale per", source);
-                    video.src = url;
-                    video.onloadeddata = () => {
-                        clearTimeout(timeout);
-                        video.play()
-                            .then(() => resolve(true))
-                            .catch(() => resolve(false));
-                    };
-                    video.onerror = () => {
-                        clearTimeout(timeout);
-                        resolve(false);
-                    };
-                }
-            });
-        }
-
-        function play(name, url) {
-            comunica("In riproduzione: " + name);
+        // 🎥 FUNZIONE ORIGINALE DAL FILE CHE FUNZIONA (ESATTA COPIA)
+        function playChannelDirect(name, url) {
+            console.log(`Richiesta riproduzione: ${name} - ${url}`);
+            
             window.activeUrl = url;
             window.activeName = name;
-            
-            if (hls) hls.destroy();
-            
-            if (url.includes(".m3u8") && Hls.isSupported()) {
+
+            if (hls) {
+                hls.destroy();
+                hls = null;
+            }
+
+            if (url.includes('.m3u8') && Hls.isSupported()) {
+                console.log("Rilevato stream HLS, uso HLS.js");
                 hls = new Hls();
                 hls.loadSource(url);
                 hls.attachMedia(video);
-                hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    video.play();
+                });
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                    console.error('Errore HLS:', data);
+                });
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                console.log("Rilevato stream HLS, uso il player nativo");
+                video.src = url;
+                video.play();
             } else {
+                console.log("Formato non HLS, uso il player nativo");
                 video.src = url;
                 video.play();
             }
+        }
+
+        function play(name, url) {
+            playChannelDirect(name, url);
         }
 
         // Eventi
@@ -631,6 +638,65 @@
         document.getElementById('muteBtn').onclick = () => { 
             video.muted = !video.muted; 
             comunica(video.muted ? "Audio silenziato" : "Audio riattivato"); 
+        };
+
+        // Registrazione su server Hetzner
+        document.getElementById('confirmRecordBtn').onclick = async () => {
+            const serverUrl = document.getElementById('serverUrl').value.trim();
+            const serverPin = document.getElementById('serverPin').value.trim();
+            
+            if (!serverUrl) {
+                comunica("⚠️ Configura prima l'URL del server");
+                document.getElementById('status').textContent = "⚠️ Server non configurato";
+                return;
+            }
+            
+            if (!window.activeUrl) {
+                comunica("⚠️ Seleziona prima un canale da registrare");
+                document.getElementById('status').textContent = "⚠️ Nessun canale selezionato";
+                return;
+            }
+            
+            const payload = { 
+                url: window.activeUrl, 
+                channelName: window.activeName || 'Canale', 
+                time: `${hS.value}:${mS.value}`, 
+                duration: "60"
+            };
+            
+            // Aggiungi PIN solo se presente
+            if (serverPin) {
+                payload.pin = serverPin;
+            }
+            
+            try {
+                document.getElementById('status').textContent = "📡 Invio richiesta registrazione...";
+                const r = await fetch(`${serverUrl}/api/record-scheduled`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(payload) 
+                });
+                
+                if (r.ok) {
+                    const result = await r.json();
+                    comunica(`✅ Registrazione programmata: ${window.activeName} alle ${hS.value}:${mS.value}`);
+                    document.getElementById('status').textContent = `✅ Registrazione programmata`;
+                } else {
+                    const error = await r.text();
+                    if (r.status === 403 || r.status === 401) {
+                        comunica("❌ Errore: PIN richiesto o errato");
+                        document.getElementById('status').textContent = "❌ PIN richiesto/errato";
+                    } else {
+                        comunica("❌ Errore: verifica configurazione server");
+                        document.getElementById('status').textContent = "❌ Errore registrazione";
+                    }
+                    console.error('Errore server:', error);
+                }
+            } catch (e) {
+                comunica("❌ Impossibile connettersi al server");
+                document.getElementById('status').textContent = "❌ Server non raggiungibile";
+                console.error('Errore connessione:', e);
+            }
         };
     </script>
 </body>
