@@ -8,11 +8,81 @@
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         :focus { outline: 4px solid #fbbf24; outline-offset: 2px; }
+        :focus-visible { outline: 4px solid #fbbf24; outline-offset: 2px; }
         .panel-bg { background: #1a1a1a; border: 1px solid #333; }
         .btn-action { background: #4b5563; color: white; padding: 0.7rem; border-radius: 0.6rem; text-align: center; font-weight: bold; }
         .btn-action:hover, .btn-action:focus { background: #3b82f6; color: white; }
         .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
         input::placeholder { color: #9ca3af; }
+        /* Migliora accessibilità navigazione tastiera */
+        .channel-item { cursor: pointer; transition: all 0.2s; position: relative; }
+        .channel-item:focus { 
+            outline: 3px solid #fbbf24 !important; 
+            outline-offset: 2px !important;
+            background: #3b82f6 !important;
+            color: white !important;
+            z-index: 10;
+        }
+        .channel-item:hover {
+            background: #fbbf24 !important;
+            color: black !important;
+        }
+        /* Menu dropdown per stream multipli */
+        .stream-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #1f2937;
+            border: 2px solid #fbbf24;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            margin-top: 0.5rem;
+            z-index: 100;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .stream-menu.active {
+            display: block;
+        }
+        .stream-option {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: #374151;
+            border-radius: 0.375rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .stream-option:hover {
+            background: #4b5563;
+        }
+        .stream-copy-btn {
+            background: #3b82f6;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .stream-copy-btn:hover {
+            background: #2563eb;
+        }
+        .stream-play-btn {
+            background: #10b981;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .stream-play-btn:hover {
+            background: #059669;
+        }
     </style>
 </head>
 <body class="h-full flex flex-col font-sans">
@@ -61,9 +131,9 @@
                 <h2 class="text-lg font-bold text-gray-400 mb-3">ℹ️ Info Ricerca</h2>
                 <div class="space-y-2 text-gray-300">
                     <p><span class="font-bold text-yellow-500">Liste disponibili:</span> 14</p>
-                    <p><span class="font-bold text-yellow-500">Proxy CORS:</span> AllOrigins (Affidabile)</p>
+                    <p><span class="font-bold text-yellow-500">Proxy CORS:</span> 3 con fallback automatico</p>
                     <p><span class="font-bold text-yellow-500">Ricerca:</span> Automatica</p>
-                    <p class="text-xs text-gray-500 mt-4">Versione GitHub con HTTPS - La ricerca cerca automaticamente in tutte le liste M3U disponibili</p>
+                    <p class="text-xs text-gray-500 mt-4">Versione GitHub con HTTPS - Sistema multi-proxy per massima affidabilità</p>
                 </div>
             </div>
         </section>
@@ -110,7 +180,7 @@
                 .replace(/\s+/g, '');
         }
 
-        // 🔍 FUNZIONE DI RICERCA IN TUTTE LE LISTE (con AllOrigins)
+        // 🔍 FUNZIONE DI RICERCA IN TUTTE LE LISTE (con fallback multi-proxy)
         async function searchAllLists(query) {
             if (!query || query.trim().length < 2) {
                 comunica("Scrivi almeno 2 caratteri per cercare");
@@ -131,12 +201,10 @@
                 try {
                     searchProgress.innerHTML = `🔄 Cercando in: ${list.name} (${listsSearched + 1}/14)`;
                     
-                    // 🌐 Usa AllOrigins come proxy CORS
-                    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(list.url)}`;
-                    const r = await fetch(proxyUrl);
-
-                    if (r.ok) {
-                        const txt = await r.text();
+                    // 🌐 Prova 3 proxy CORS con fallback automatico
+                    const txt = await fetchWithFallback(list.url);
+                    
+                    if (txt) {
                         const channels = parseM3U(txt, list.name);
                         
                         // Filtra solo i canali che corrispondono alla ricerca
@@ -162,6 +230,44 @@
             comunica(`Ricerca completata: ${channelsFound} canali trovati`);
 
             renderChannels();
+        }
+
+        // 🔄 Funzione per provare 3 proxy CORS con fallback
+        async function fetchWithFallback(url) {
+            // Proxy 1: AllOrigins (più stabile)
+            try {
+                const proxyUrl1 = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+                const r1 = await fetch(proxyUrl1);
+                if (r1.ok) {
+                    return await r1.text();
+                }
+            } catch (err) {
+                console.log('AllOrigins fallito, provo corsproxy...');
+            }
+
+            // Proxy 2: Corsproxy.io
+            try {
+                const proxyUrl2 = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+                const r2 = await fetch(proxyUrl2);
+                if (r2.ok) {
+                    return await r2.text();
+                }
+            } catch (err) {
+                console.log('Corsproxy fallito, provo codetabs...');
+            }
+
+            // Proxy 3: CodeTabs
+            try {
+                const proxyUrl3 = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
+                const r3 = await fetch(proxyUrl3);
+                if (r3.ok) {
+                    return await r3.text();
+                }
+            } catch (err) {
+                console.log('Tutti i proxy falliti per:', url);
+            }
+
+            return null;
         }
 
         function parseM3U(txt, sourceName) {
@@ -194,21 +300,238 @@
                 return;
             }
 
-            // Mostra massimo 200 risultati
-            allChannels.slice(0, 200).forEach(c => {
+            // Raggruppa canali per nome
+            const channelsByName = {};
+            allChannels.forEach((c, index) => {
+                if (!channelsByName[c.name]) {
+                    channelsByName[c.name] = [];
+                }
+                channelsByName[c.name].push({ ...c, originalIndex: index });
+            });
+
+            // Mostra massimo 200 canali unici
+            const uniqueChannels = Object.keys(channelsByName).slice(0, 200);
+            
+            uniqueChannels.forEach(channelName => {
+                const streams = channelsByName[channelName];
+                const firstStream = streams[0];
+                
                 const li = document.createElement('li');
-                li.className = "p-3 bg-gray-700 hover:bg-yellow-500 hover:text-black cursor-pointer rounded mb-1 text-sm border-l-4 border-transparent hover:border-black";
-                li.innerHTML = `<strong>${c.name}</strong><br><span class="text-xs opacity-70">${c.source}</span>`;
-                li.onclick = () => play(c.name, c.url);
+                li.className = "channel-item p-3 bg-gray-700 rounded mb-1 text-sm border-l-4 border-transparent";
+                li.tabIndex = 0;
+                li.setAttribute('role', 'button');
+                li.style.position = 'relative';
+                
+                const streamsCount = streams.length > 1 ? ` (${streams.length} fonti)` : '';
+                li.setAttribute('aria-label', `${channelName}${streamsCount}`);
+                
+                li.innerHTML = `
+                    <div class="channel-header">
+                        <strong>${channelName}</strong>${streamsCount}<br>
+                        <span class="text-xs opacity-70">${firstStream.source}</span>
+                    </div>
+                `;
+                
+                // Menu dropdown con tutti gli stream
+                if (streams.length > 1) {
+                    const menu = document.createElement('div');
+                    menu.className = 'stream-menu';
+                    menu.innerHTML = `
+                        <div class="text-xs font-bold mb-2 text-yellow-400">📡 ${streams.length} stream disponibili:</div>
+                    `;
+                    
+                    streams.forEach((stream, idx) => {
+                        const option = document.createElement('div');
+                        option.className = 'stream-option';
+                        option.innerHTML = `
+                            <div class="flex-1 text-xs">
+                                <strong>${stream.source}</strong><br>
+                                <span class="opacity-60">${stream.url.substring(0, 40)}...</span>
+                            </div>
+                            <div class="flex gap-1">
+                                <button class="stream-play-btn" data-index="${stream.originalIndex}">▶ Play</button>
+                                <button class="stream-copy-btn" data-url="${encodeURIComponent(stream.url)}">📋 Copia</button>
+                            </div>
+                        `;
+                        menu.appendChild(option);
+                    });
+                    
+                    li.appendChild(menu);
+                    
+                    // Click sulla testata: toggle menu
+                    li.querySelector('.channel-header').onclick = (e) => {
+                        e.stopPropagation();
+                        // Chiudi altri menu aperti
+                        document.querySelectorAll('.stream-menu.active').forEach(m => {
+                            if (m !== menu) m.classList.remove('active');
+                        });
+                        menu.classList.toggle('active');
+                    };
+                } else {
+                    // Un solo stream: click diretto
+                    li.onclick = () => playWithFallback(channelName, firstStream.originalIndex);
+                }
+                
+                // Attivazione con tastiera
+                li.onkeydown = (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        if (streams.length > 1) {
+                            li.querySelector('.channel-header').click();
+                        } else {
+                            playWithFallback(channelName, firstStream.originalIndex);
+                        }
+                    }
+                };
+                
                 list.appendChild(li);
             });
 
-            if (allChannels.length > 200) {
+            // Event delegation per i pulsanti nel menu
+            list.addEventListener('click', (e) => {
+                if (e.target.classList.contains('stream-play-btn')) {
+                    e.stopPropagation();
+                    const index = parseInt(e.target.dataset.index);
+                    const channel = allChannels[index];
+                    playWithFallback(channel.name, index);
+                    // Chiudi il menu
+                    e.target.closest('.stream-menu').classList.remove('active');
+                }
+                
+                if (e.target.classList.contains('stream-copy-btn')) {
+                    e.stopPropagation();
+                    const url = decodeURIComponent(e.target.dataset.url);
+                    navigator.clipboard.writeText(url).then(() => {
+                        const originalText = e.target.textContent;
+                        e.target.textContent = '✅';
+                        e.target.style.background = '#10b981';
+                        setTimeout(() => {
+                            e.target.textContent = originalText;
+                            e.target.style.background = '';
+                        }, 1500);
+                        comunica("Link copiato negli appunti");
+                    });
+                }
+            });
+
+            if (Object.keys(channelsByName).length > 200) {
                 const li = document.createElement('li');
                 li.className = "p-2 text-yellow-400 text-center";
-                li.textContent = `... e altri ${allChannels.length - 200} canali. Affina la ricerca per vedere tutto.`;
+                li.textContent = `... e altri ${Object.keys(channelsByName).length - 200} canali. Affina la ricerca per vedere tutto.`;
                 list.appendChild(li);
             }
+        }
+
+        // 🎬 RIPRODUZIONE CON FALLBACK AUTOMATICO
+        async function playWithFallback(channelName, startIndex) {
+            // Trova tutti i canali con lo stesso nome
+            const sameNameChannels = allChannels.filter(c => c.name === channelName);
+            
+            if (sameNameChannels.length === 0) {
+                comunica("Canale non trovato");
+                return;
+            }
+
+            comunica(`Tentativo riproduzione: ${channelName}`);
+            document.getElementById('status').textContent = `🔄 Caricamento ${channelName}...`;
+
+            // Trova l'indice del canale cliccato
+            let channelIndex = allChannels.findIndex((c, i) => i === startIndex);
+            let attempts = 0;
+            let maxAttempts = sameNameChannels.length;
+            let lastAttemptedUrl = null;
+            let lastAttemptedSource = null;
+
+            // Prova tutti i canali con lo stesso nome
+            for (let i = 0; i < maxAttempts; i++) {
+                const currentIndex = (channelIndex + i) % allChannels.length;
+                const channel = allChannels[currentIndex];
+                
+                // Verifica che sia lo stesso canale (stesso nome)
+                if (channel.name !== channelName) continue;
+                
+                attempts++;
+                lastAttemptedUrl = channel.url;
+                lastAttemptedSource = channel.source;
+                
+                const attemptMsg = maxAttempts > 1 ? ` (tentativo ${attempts}/${maxAttempts})` : '';
+                document.getElementById('status').textContent = `🔄 ${channelName}${attemptMsg}`;
+                
+                console.log(`Provo: ${channel.source} - ${channel.url.substring(0, 50)}`);
+                
+                // Prova a riprodurre
+                const success = await tryPlay(channel.name, channel.url, channel.source);
+                
+                if (success) {
+                    comunica(`In riproduzione da: ${channel.source}`);
+                    document.getElementById('status').textContent = `✅ ${channelName} (${channel.source})`;
+                    return; // Trovato uno che funziona!
+                }
+                
+                // Aspetta un po' prima del prossimo tentativo
+                await new Promise(r => setTimeout(r, 500));
+            }
+
+            // Nessuno ha funzionato - salva l'ultimo tentato per il pulsante Copia
+            window.activeUrl = lastAttemptedUrl;
+            window.activeName = channelName;
+            
+            comunica(`Tutti i ${attempts} stream di ${channelName} non sono disponibili. Ultimo URL salvato per copia.`);
+            document.getElementById('status').textContent = `❌ ${channelName} non disponibile (puoi copiare l'ultimo link)`;
+        }
+
+        // 🎥 Tenta di riprodurre un singolo stream
+        function tryPlay(name, url, source) {
+            return new Promise((resolve) => {
+                window.activeUrl = url;
+                window.activeName = name;
+                
+                if (hls) hls.destroy();
+                
+                const timeout = setTimeout(() => {
+                    console.log(`Timeout per ${source}`);
+                    resolve(false);
+                }, 8000); // 8 secondi timeout
+
+                if (url.includes(".m3u8") && Hls.isSupported()) {
+                    hls = new Hls({
+                        enableWorker: true,
+                        maxLoadingDelay: 4,
+                        manifestLoadingTimeOut: 10000,
+                        manifestLoadingMaxRetry: 1
+                    });
+                    
+                    hls.loadSource(url);
+                    hls.attachMedia(video);
+                    
+                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                        clearTimeout(timeout);
+                        video.play()
+                            .then(() => resolve(true))
+                            .catch(() => resolve(false));
+                    });
+                    
+                    hls.on(Hls.Events.ERROR, (event, data) => {
+                        if (data.fatal) {
+                            clearTimeout(timeout);
+                            console.log(`Errore HLS fatale: ${data.type} - ${data.details}`);
+                            resolve(false);
+                        }
+                    });
+                } else {
+                    video.src = url;
+                    video.onloadeddata = () => {
+                        clearTimeout(timeout);
+                        video.play()
+                            .then(() => resolve(true))
+                            .catch(() => resolve(false));
+                    };
+                    video.onerror = () => {
+                        clearTimeout(timeout);
+                        resolve(false);
+                    };
+                }
+            });
         }
 
         function play(name, url) {
@@ -243,9 +566,30 @@
         };
 
         document.getElementById('copyBtn').onclick = () => {
-            if (!window.activeUrl) return comunica("Nessun canale selezionato.");
-            navigator.clipboard.writeText(window.activeUrl);
-            comunica("Link copiato negli appunti.");
+            if (!window.activeUrl) {
+                comunica("Nessun canale selezionato.");
+                document.getElementById('status').textContent = "⚠️ Seleziona prima un canale";
+                return;
+            }
+            
+            navigator.clipboard.writeText(window.activeUrl)
+                .then(() => {
+                    const originalText = document.getElementById('copyBtn').textContent;
+                    document.getElementById('copyBtn').textContent = '✅ Copiato!';
+                    document.getElementById('copyBtn').style.background = '#10b981'; // verde
+                    comunica(`Link copiato: ${window.activeUrl.substring(0, 50)}...`);
+                    document.getElementById('status').textContent = "✅ Link copiato negli appunti";
+                    
+                    // Ripristina dopo 2 secondi
+                    setTimeout(() => {
+                        document.getElementById('copyBtn').textContent = originalText;
+                        document.getElementById('copyBtn').style.background = '';
+                    }, 2000);
+                })
+                .catch(() => {
+                    comunica("Errore nella copia del link");
+                    document.getElementById('status').textContent = "❌ Errore copia";
+                });
         };
 
         document.getElementById('volUp').onclick = () => { 
