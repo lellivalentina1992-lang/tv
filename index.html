@@ -33,7 +33,7 @@
                 <button class="w-full text-left p-2 rounded bg-blue-900 hover:bg-yellow-500 hover:text-black text-sm font-bold" data-url="https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/ipradioita.m3u">📻 TUTTE LE RADIO ITALIANE</button>
                 <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-yellow-500 hover:text-black text-sm" data-url="http://davidefulgione.it/tv.m3u">🆕 TV Italia (Fulgione 2026)</button>
                 <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-yellow-500 hover:text-black text-sm" data-url="http://www.davidefulgione.it/tivu.m3u">🆕 Tivu.m3u (Fulgione)</button>
-                <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-yellow-500 hover:text-black text-sm" data-url="https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u">⭐ Lista Personale</button>
+                <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-yellow-500 hover:text-black text-sm" data-url="https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u">⭐ Lista Personale (GitHub)</button>
                 <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-yellow-500 hover:text-black text-sm" data-url="https://raw.githubusercontent.com/Tvditutto/z-m3u/main/italy.m3u">🇮🇹 Tvditutto</button>
                 <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-yellow-500 hover:text-black text-sm" data-url="https://raw.githubusercontent.com/TheWorldOfIPTV/WorldOfIPTV/master/Lists/PlutoTV/IT.m3u">🎬 Pluto TV</button>
                 <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-yellow-500 hover:text-black text-sm" data-url="https://raw.githubusercontent.com/PuraTV/PuraTV.github.io/master/m3u8/it.m3u">🏛️ Pura TV (Regionali)</button>
@@ -67,45 +67,18 @@
                 <button id="muteBtn" class="btn-action">Muto</button>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="p-5 rounded-xl panel-bg border-yellow-600 border-2">
-                    <h2 class="text-xl font-bold text-yellow-500 mb-4">🔴 Registra su Server</h2>
-                    <div class="flex gap-3 mb-4">
-                        <div class="flex-1">
-                            <label class="text-xs font-bold text-gray-400 block mb-1">Ora</label>
-                            <select id="regHour" class="w-full bg-black p-3 rounded border border-gray-700"></select>
-                        </div>
-                        <div class="flex-1">
-                            <label class="text-xs font-bold text-gray-400 block mb-1">Minuti</label>
-                            <select id="regMin" class="w-full bg-black p-3 rounded border border-gray-700"></select>
-                        </div>
-                    </div>
-                    <button id="confirmRecordBtn" class="w-full bg-yellow-600 hover:bg-yellow-700 text-black font-bold py-4 rounded-xl transition-colors">Pianifica Registrazione</button>
-                </div>
-
-                <div class="p-5 rounded-xl panel-bg border-gray-700 border text-sm">
-                    <h2 class="text-lg font-bold text-gray-400 mb-3">ℹ️ Info Configurazione</h2>
-                    <div class="space-y-2 text-gray-300">
-                        <p><span class="font-bold text-yellow-500">Server:</span> Configurato nel codice</p>
-                        <p><span class="font-bold text-yellow-500">Proxy M3U:</span> Attivo</p>
-                        <p><span class="font-bold text-yellow-500">Cache:</span> 1 ora</p>
-                        <p class="text-xs text-gray-500 mt-4">Per modificare il server, edita la sezione CONFIG nel codice JavaScript</p>
-                    </div>
+            <div class="p-5 rounded-xl panel-bg border-gray-700 border text-sm">
+                <h2 class="text-lg font-bold text-gray-400 mb-3">ℹ️ Info</h2>
+                <div class="space-y-2 text-gray-300">
+                    <p><span class="font-bold text-yellow-500">Proxy CORS:</span> AllOrigins (Affidabile)</p>
+                    <p><span class="font-bold text-yellow-500">Liste:</span> 14 sorgenti IPTV</p>
+                    <p class="text-xs text-gray-500 mt-4">Versione GitHub - Servita da Vercel/GitHub Pages con HTTPS</p>
                 </div>
             </div>
         </section>
     </main>
 
     <script>
-        // ==============================
-        // 🔧 CONFIGURAZIONE
-        // ==============================
-        const CONFIG = {
-            // Cambia questo URL con il tuo server!
-            SERVER_URL: 'http://138.199.196.24:3000',
-            PIN: '42944'
-        };
-
         let channelsDb = [];
         let hls = null;
         const video = document.getElementById('videoPlayer');
@@ -124,27 +97,18 @@
                 .replace(/tre/g, "3").replace(/quattro/g, "4").replace(/cinque/g, "5")
                 .replace(/sei/g, "6").replace(/sette/g, "7").replace(/otto/g, "8")
                 .replace(/nove/g, "9").replace(/dieci/g, "10").replace(/ventiquattro/g, "24")
-                .replace(/\s+/g, ''); // Rimuove spazi per match più facili
+                .replace(/\s+/g, '');
         }
 
-        // Timer per registrazione (scatti di 5 minuti)
-        const hS = document.getElementById('regHour');
-        for(let i=0; i<24; i++) hS.add(new Option(i.toString().padStart(2,'0'), i.toString().padStart(2,'0')));
-        const mS = document.getElementById('regMin');
-        for(let i=0; i<60; i+=5) mS.add(new Option(i.toString().padStart(2,'0'), i.toString().padStart(2,'0')));
-
-        // ✅ NUOVA FUNZIONE: Usa il TUO server Hetzner invece di corsproxy.io
+        // ✅ USA ALLORIGINS (CORS proxy più stabile e affidabile)
         document.getElementById('preset-buttons').onclick = async (e) => {
             const btn = e.target.closest('button');
             if (!btn) return;
-            document.getElementById('status').textContent = "⚡ Caricamento dal server...";
+            document.getElementById('status').textContent = "⚡ Caricamento...";
             try {
-                // 🚀 Chiama il proxy sul TUO server
-                const r = await fetch(`${CONFIG.SERVER_URL}/api/proxy-m3u`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: btn.dataset.url })
-                });
+                // 🌐 Usa AllOrigins (più stabile di corsproxy.io)
+                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(btn.dataset.url)}`;
+                const r = await fetch(proxyUrl);
                 
                 if (!r.ok) throw new Error('Server error');
                 
@@ -155,7 +119,7 @@
                 comunica("Caricata lista " + btn.textContent + " con " + channelsDb.length + " canali.");
             } catch (err) { 
                 console.error('Errore caricamento:', err);
-                comunica("❌ Errore nel caricamento della lista. Verifica il server."); 
+                comunica("❌ Errore nel caricamento della lista."); 
                 document.getElementById('status').textContent = "❌ Errore caricamento";
             }
         };
@@ -191,13 +155,20 @@
 
         function play(name, url) {
             comunica("In riproduzione: " + name);
-            window.activeUrl = url; window.activeName = name;
+            window.activeUrl = url;
+            window.activeName = name;
+            
             if (hls) hls.destroy();
             
             if (url.includes(".m3u8") && Hls.isSupported()) {
-                hls = new Hls(); hls.loadSource(url); hls.attachMedia(video);
+                hls = new Hls();
+                hls.loadSource(url);
+                hls.attachMedia(video);
                 hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-            } else { video.src = url; video.play(); }
+            } else {
+                video.src = url;
+                video.play();
+            }
         }
 
         // Funzioni pulsanti
@@ -211,35 +182,18 @@
             video.volume = Math.min(1, video.volume + 0.1); 
             comunica("Volume " + Math.round(video.volume*100) + "%"); 
         };
+        
         document.getElementById('volDown').onclick = () => { 
             video.volume = Math.max(0, video.volume - 0.1); 
             comunica("Volume " + Math.round(video.volume*100) + "%"); 
         };
+        
         document.getElementById('muteBtn').onclick = () => { 
             video.muted = !video.muted; 
             comunica(video.muted ? "Audio silenziato" : "Audio riattivato"); 
         };
+        
         document.getElementById('searchBox').oninput = (e) => renderChannels(e.target.value);
-
-        // Registrazione Hetzner
-        document.getElementById('confirmRecordBtn').onclick = async () => {
-            if (!window.activeUrl) return comunica("Scegli prima un canale da registrare!");
-            const payload = { 
-                url: window.activeUrl, 
-                channelName: window.activeName, 
-                time: `${hS.value}:${mS.value}`, 
-                duration: "60", 
-                pin: CONFIG.PIN
-            };
-            try {
-                const r = await fetch(`${CONFIG.SERVER_URL}/api/record-scheduled`, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify(payload) 
-                });
-                comunica(r.ok ? "Registrazione programmata con successo!" : "Errore: controlla il PIN o il server.");
-            } catch (e) { comunica("Impossibile connettersi al server."); }
-        };
     </script>
 </body>
 </html>
