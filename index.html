@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TV ULTRA PRO - Valentina (Versione Finale 2026)</title>
+    <title>TV ULTRA PRO - Ricerca Automatica 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
@@ -28,29 +28,19 @@
 
         <section class="w-full md:w-1/3 lg:w-1/4 p-4 bg-gray-800 flex flex-col overflow-y-auto border-r border-gray-700">
             
-            <h2 class="text-lg font-bold mb-3 text-yellow-400">1. Liste (14 Sorgenti)</h2>
-            <div id="preset-buttons" class="space-y-1 mb-6" role="group" aria-label="Seleziona lista canali">
-                <button class="w-full text-left p-2 rounded bg-blue-900 hover:bg-yellow-500 hover:text-black text-sm font-bold" data-url="https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/ipradioita.m3u">📻 TUTTE LE RADIO ITALIANE</button>
-                <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-yellow-500 hover:text-black text-sm" data-url="http://davidefulgione.it/tv.m3u">🆕 TV Italia (Fulgione 2026)</button>
-                <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-yellow-500 hover:text-black text-sm" data-url="http://www.davidefulgione.it/tivu.m3u">🆕 Tivu.m3u (Fulgione)</button>
-                <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-yellow-500 hover:text-black text-sm" data-url="https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u">⭐ Lista Personale (GitHub)</button>
-                <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-yellow-500 hover:text-black text-sm" data-url="https://raw.githubusercontent.com/Tvditutto/z-m3u/main/italy.m3u">🇮🇹 Tvditutto</button>
-                <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-yellow-500 hover:text-black text-sm" data-url="https://raw.githubusercontent.com/TheWorldOfIPTV/WorldOfIPTV/master/Lists/PlutoTV/IT.m3u">🎬 Pluto TV</button>
-                <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-yellow-500 hover:text-black text-sm" data-url="https://raw.githubusercontent.com/PuraTV/PuraTV.github.io/master/m3u8/it.m3u">🏛️ Pura TV (Regionali)</button>
-                <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-yellow-500 hover:text-black text-sm" data-url="https://iptv-org.github.io/iptv/languages/ita.m3u">🌍 IPTV-Org Italia</button>
-                <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-yellow-500 hover:text-black text-sm" data-url="https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist/it.m3u">🆓 Free-TV</button>
-                <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-yellow-500 hover:text-black text-sm" data-url="http://inthemix.altervista.org/tv.m3u">🎵 In The Mix</button>
-                <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-yellow-500 hover:text-black text-sm" data-url="https://tivustream.website/urls/listm3u">📡 TivuStream</button>
-                <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-yellow-500 hover:text-black text-sm" data-url="http://www.pandasat.info/iptv/kodi">🐼 PandaSat</button>
-                <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-yellow-500 hover:text-black text-sm" data-url="https://raw.githubusercontent.com/TheWorldOfIPTV/WorldOfIPTV/master/Lists/SamsungTVPlus/IT.m3u">📱 Samsung Plus</button>
-                <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-yellow-500 hover:text-black text-sm" data-url="https://raw.githubusercontent.com/df-fulgi/iptv/master/italy.m3u">📺 DF-Fulgi GitHub</button>
-            </div>
+            <h2 class="text-lg font-bold mb-3 text-yellow-400">🔍 Ricerca Automatica</h2>
+            <p class="text-xs text-gray-400 mb-4">Cerca in tutte le 14 liste automaticamente!</p>
+            
+            <input type="search" id="searchBox" class="bg-gray-900 border border-gray-600 rounded p-4 w-full mb-4 text-white text-lg" placeholder="Es: Canale 5, Rai 1, Radio 24..." autofocus>
+            
+            <button id="searchAllBtn" class="w-full bg-yellow-600 hover:bg-yellow-700 text-black font-bold py-3 rounded-xl mb-4 transition-colors">
+                🔎 Cerca in Tutte le Liste
+            </button>
 
-            <h2 class="text-lg font-bold mb-2 text-yellow-400">2. Cerca Canale/Radio</h2>
-            <input type="search" id="searchBox" class="bg-gray-900 border border-gray-600 rounded p-4 w-full mb-4 text-white" placeholder="Es: Rai uno, Italia 1, Radio 24...">
+            <div id="searchProgress" class="hidden text-sm text-gray-300 mb-4 p-3 bg-gray-900 rounded"></div>
 
             <ul id="channelList" class="flex-1 space-y-1 overflow-y-auto" role="listbox">
-                <li class="p-2 text-gray-500">Seleziona una lista per caricare i canali.</li>
+                <li class="p-2 text-gray-500">Scrivi qualcosa e premi "Cerca in Tutte le Liste"</li>
             </ul>
         </section>
 
@@ -68,20 +58,40 @@
             </div>
 
             <div class="p-5 rounded-xl panel-bg border-gray-700 border text-sm">
-                <h2 class="text-lg font-bold text-gray-400 mb-3">ℹ️ Info</h2>
+                <h2 class="text-lg font-bold text-gray-400 mb-3">ℹ️ Info Ricerca</h2>
                 <div class="space-y-2 text-gray-300">
+                    <p><span class="font-bold text-yellow-500">Liste disponibili:</span> 14</p>
                     <p><span class="font-bold text-yellow-500">Proxy CORS:</span> AllOrigins (Affidabile)</p>
-                    <p><span class="font-bold text-yellow-500">Liste:</span> 14 sorgenti IPTV</p>
-                    <p class="text-xs text-gray-500 mt-4">Versione GitHub - Servita da Vercel/GitHub Pages con HTTPS</p>
+                    <p><span class="font-bold text-yellow-500">Ricerca:</span> Automatica</p>
+                    <p class="text-xs text-gray-500 mt-4">Versione GitHub con HTTPS - La ricerca cerca automaticamente in tutte le liste M3U disponibili</p>
                 </div>
             </div>
         </section>
     </main>
 
     <script>
-        let channelsDb = [];
+        // 🔍 TUTTE LE LISTE DISPONIBILI
+        const ALL_LISTS = [
+            { name: "⭐ Lista Personale (GitHub)", url: "https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u" },
+            { name: "📻 TUTTE LE RADIO ITALIANE", url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/ipradioita.m3u" },
+            { name: "🆕 TV Italia (Fulgione 2026)", url: "http://davidefulgione.it/tv.m3u" },
+            { name: "🆕 Tivu.m3u (Fulgione)", url: "http://www.davidefulgione.it/tivu.m3u" },
+            { name: "🇮🇹 Tvditutto", url: "https://raw.githubusercontent.com/Tvditutto/z-m3u/main/italy.m3u" },
+            { name: "🎬 Pluto TV", url: "https://raw.githubusercontent.com/TheWorldOfIPTV/WorldOfIPTV/master/Lists/PlutoTV/IT.m3u" },
+            { name: "🏛️ Pura TV (Regionali)", url: "https://raw.githubusercontent.com/PuraTV/PuraTV.github.io/master/m3u8/it.m3u" },
+            { name: "🌍 IPTV-Org Italia", url: "https://iptv-org.github.io/iptv/languages/ita.m3u" },
+            { name: "🆓 Free-TV", url: "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist/it.m3u" },
+            { name: "🎵 In The Mix", url: "http://inthemix.altervista.org/tv.m3u" },
+            { name: "📡 TivuStream", url: "https://tivustream.website/urls/listm3u" },
+            { name: "🐼 PandaSat", url: "http://www.pandasat.info/iptv/kodi" },
+            { name: "📱 Samsung Plus", url: "https://raw.githubusercontent.com/TheWorldOfIPTV/WorldOfIPTV/master/Lists/SamsungTVPlus/IT.m3u" },
+            { name: "📺 DF-Fulgi GitHub", url: "https://raw.githubusercontent.com/df-fulgi/iptv/master/italy.m3u" }
+        ];
+
+        let allChannels = [];
         let hls = null;
         const video = document.getElementById('videoPlayer');
+        const searchProgress = document.getElementById('searchProgress');
 
         function comunica(t) {
             const a = document.getElementById('announcer');
@@ -100,57 +110,105 @@
                 .replace(/\s+/g, '');
         }
 
-        // ✅ USA ALLORIGINS (CORS proxy più stabile e affidabile)
-        document.getElementById('preset-buttons').onclick = async (e) => {
-            const btn = e.target.closest('button');
-            if (!btn) return;
-            document.getElementById('status').textContent = "⚡ Caricamento...";
-            try {
-                // 🌐 Usa AllOrigins (più stabile di corsproxy.io)
-                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(btn.dataset.url)}`;
-                const r = await fetch(proxyUrl);
-                
-                if (!r.ok) throw new Error('Server error');
-                
-                const txt = await r.text();
-                parseM3U(txt);
-                renderChannels("");
-                document.getElementById('status').textContent = "✅ Lista: " + btn.textContent;
-                comunica("Caricata lista " + btn.textContent + " con " + channelsDb.length + " canali.");
-            } catch (err) { 
-                console.error('Errore caricamento:', err);
-                comunica("❌ Errore nel caricamento della lista."); 
-                document.getElementById('status').textContent = "❌ Errore caricamento";
+        // 🔍 FUNZIONE DI RICERCA IN TUTTE LE LISTE (con AllOrigins)
+        async function searchAllLists(query) {
+            if (!query || query.trim().length < 2) {
+                comunica("Scrivi almeno 2 caratteri per cercare");
+                return;
             }
-        };
 
-        function parseM3U(txt) {
-            channelsDb = [];
+            allChannels = [];
+            const normalizedQuery = normalize(query);
+            let listsSearched = 0;
+            let channelsFound = 0;
+
+            searchProgress.classList.remove('hidden');
+            searchProgress.innerHTML = "🔄 Ricerca in corso... 0/14 liste";
+            document.getElementById('status').textContent = "🔍 Ricerca in corso...";
+            document.getElementById('searchAllBtn').disabled = true;
+
+            for (const list of ALL_LISTS) {
+                try {
+                    searchProgress.innerHTML = `🔄 Cercando in: ${list.name} (${listsSearched + 1}/14)`;
+                    
+                    // 🌐 Usa AllOrigins come proxy CORS
+                    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(list.url)}`;
+                    const r = await fetch(proxyUrl);
+
+                    if (r.ok) {
+                        const txt = await r.text();
+                        const channels = parseM3U(txt, list.name);
+                        
+                        // Filtra solo i canali che corrispondono alla ricerca
+                        const matches = channels.filter(c => normalize(c.name).includes(normalizedQuery));
+                        
+                        if (matches.length > 0) {
+                            allChannels.push(...matches);
+                            channelsFound += matches.length;
+                            searchProgress.innerHTML = `✅ ${list.name}: ${matches.length} canali trovati`;
+                            await new Promise(r => setTimeout(r, 300)); // Pausa per leggere
+                        }
+                    }
+                } catch (err) {
+                    console.error(`Errore lista ${list.name}:`, err);
+                }
+                
+                listsSearched++;
+            }
+
+            searchProgress.classList.add('hidden');
+            document.getElementById('searchAllBtn').disabled = false;
+            document.getElementById('status').textContent = `✅ Trovati ${channelsFound} canali in ${listsSearched} liste`;
+            comunica(`Ricerca completata: ${channelsFound} canali trovati`);
+
+            renderChannels();
+        }
+
+        function parseM3U(txt, sourceName) {
+            const channels = [];
             const lines = txt.split('\n');
             let name = "";
+            
             lines.forEach(l => {
-                if (l.startsWith("#EXTINF:")) name = l.split(',').pop().trim();
-                else if (l.startsWith("http") && name) {
-                    channelsDb.push({ name: name, url: l.trim() });
+                if (l.startsWith("#EXTINF:")) {
+                    name = l.split(',').pop().trim();
+                } else if (l.startsWith("http") && name) {
+                    channels.push({ 
+                        name: name, 
+                        url: l.trim(),
+                        source: sourceName 
+                    });
                     name = "";
                 }
             });
+            
+            return channels;
         }
 
-        function renderChannels(filter) {
+        function renderChannels() {
             const list = document.getElementById('channelList');
             list.innerHTML = "";
-            const query = normalize(filter);
-            const filtered = channelsDb.filter(c => normalize(c.name).includes(query));
             
-            filtered.slice(0, 150).forEach(c => {
+            if (allChannels.length === 0) {
+                list.innerHTML = '<li class="p-2 text-gray-500">Nessun canale trovato. Prova con un altro termine di ricerca.</li>';
+                return;
+            }
+
+            // Mostra massimo 200 risultati
+            allChannels.slice(0, 200).forEach(c => {
                 const li = document.createElement('li');
                 li.className = "p-3 bg-gray-700 hover:bg-yellow-500 hover:text-black cursor-pointer rounded mb-1 text-sm border-l-4 border-transparent hover:border-black";
-                li.textContent = c.name;
+                li.innerHTML = `<strong>${c.name}</strong><br><span class="text-xs opacity-70">${c.source}</span>`;
                 li.onclick = () => play(c.name, c.url);
                 list.appendChild(li);
             });
-            if (filter !== "") comunica("Trovati " + filtered.length + " risultati.");
+
+            if (allChannels.length > 200) {
+                const li = document.createElement('li');
+                li.className = "p-2 text-yellow-400 text-center";
+                li.textContent = `... e altri ${allChannels.length - 200} canali. Affina la ricerca per vedere tutto.`;
+                list.appendChild(li);
+            }
         }
 
         function play(name, url) {
@@ -171,7 +229,19 @@
             }
         }
 
-        // Funzioni pulsanti
+        // Eventi
+        document.getElementById('searchAllBtn').onclick = () => {
+            const query = document.getElementById('searchBox').value;
+            searchAllLists(query);
+        };
+
+        document.getElementById('searchBox').onkeypress = (e) => {
+            if (e.key === 'Enter') {
+                const query = document.getElementById('searchBox').value;
+                searchAllLists(query);
+            }
+        };
+
         document.getElementById('copyBtn').onclick = () => {
             if (!window.activeUrl) return comunica("Nessun canale selezionato.");
             navigator.clipboard.writeText(window.activeUrl);
@@ -192,8 +262,6 @@
             video.muted = !video.muted; 
             comunica(video.muted ? "Audio silenziato" : "Audio riattivato"); 
         };
-        
-        document.getElementById('searchBox').oninput = (e) => renderChannels(e.target.value);
     </script>
 </body>
 </html>
