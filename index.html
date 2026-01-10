@@ -8,81 +8,18 @@
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         :focus { outline: 4px solid #fbbf24; outline-offset: 2px; }
-        :focus-visible { outline: 4px solid #fbbf24; outline-offset: 2px; }
         .panel-bg { background: #1a1a1a; border: 1px solid #333; }
         .btn-action { background: #4b5563; color: white; padding: 0.7rem; border-radius: 0.6rem; text-align: center; font-weight: bold; }
         .btn-action:hover, .btn-action:focus { background: #3b82f6; color: white; }
         .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
-        input::placeholder { color: #9ca3af; }
-        /* Migliora accessibilità navigazione tastiera */
         .channel-item { cursor: pointer; transition: all 0.2s; position: relative; }
         .channel-item:focus { 
             outline: 3px solid #fbbf24 !important; 
-            outline-offset: 2px !important;
             background: #3b82f6 !important;
             color: white !important;
-            z-index: 10;
         }
-        .channel-item:hover {
-            background: #fbbf24 !important;
-            color: black !important;
-        }
-        /* Menu dropdown per stream multipli */
-        .stream-menu {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: #1f2937;
-            border: 2px solid #fbbf24;
-            border-radius: 0.5rem;
-            padding: 0.5rem;
-            margin-top: 0.5rem;
-            z-index: 100;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .stream-menu.active {
-            display: block;
-        }
-        .stream-option {
-            padding: 0.5rem;
-            margin-bottom: 0.5rem;
-            background: #374151;
-            border-radius: 0.375rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .stream-option:hover {
-            background: #4b5563;
-        }
-        .stream-copy-btn {
-            background: #3b82f6;
-            color: white;
-            padding: 0.25rem 0.75rem;
-            border-radius: 0.375rem;
-            font-size: 0.75rem;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        .stream-copy-btn:hover {
-            background: #2563eb;
-        }
-        .stream-play-btn {
-            background: #10b981;
-            color: white;
-            padding: 0.25rem 0.75rem;
-            border-radius: 0.375rem;
-            font-size: 0.75rem;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        .stream-play-btn:hover {
-            background: #059669;
-        }
+        .stream-menu { display: none; background: #1f2937; border: 2px solid #fbbf24; border-radius: 0.5rem; padding: 0.5rem; margin-top: 0.5rem; }
+        .stream-menu.active { display: block; }
     </style>
 </head>
 <body class="h-full flex flex-col font-sans">
@@ -97,25 +34,17 @@
     <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
 
         <section class="w-full md:w-1/3 lg:w-1/4 p-4 bg-gray-800 flex flex-col overflow-y-auto border-r border-gray-700">
-            
             <h2 class="text-lg font-bold mb-3 text-yellow-400">🔍 Ricerca Automatica</h2>
-            <p class="text-xs text-gray-400 mb-4">Cerca in tutte le 14 liste automaticamente!</p>
-            
-            <input type="search" id="searchBox" class="bg-gray-900 border border-gray-600 rounded p-4 w-full mb-4 text-white text-lg" placeholder="Es: Canale 5, Rai 1, Radio 24..." autofocus>
-            
-            <button id="searchAllBtn" class="w-full bg-yellow-600 hover:bg-yellow-700 text-black font-bold py-3 rounded-xl mb-4 transition-colors">
-                🔎 Cerca in Tutte le Liste
-            </button>
-
+            <p class="text-xs text-gray-400 mb-4">Ricerca in 14 liste contemporaneamente</p>
+            <input type="search" id="searchBox" class="bg-gray-900 border border-gray-600 rounded p-4 w-full mb-4 text-white text-lg" placeholder="Es: Canale 5, Rai 1..." autofocus>
+            <button id="searchAllBtn" class="w-full bg-yellow-600 hover:bg-yellow-700 text-black font-bold py-3 rounded-xl mb-4 transition-colors">🔎 Cerca in Tutte le Liste</button>
             <div id="searchProgress" class="hidden text-sm text-gray-300 mb-4 p-3 bg-gray-900 rounded"></div>
-
             <ul id="channelList" class="flex-1 space-y-1 overflow-y-auto" role="listbox">
-                <li class="p-2 text-gray-500">Scrivi qualcosa e premi "Cerca in Tutte le Liste"</li>
+                <li class="p-2 text-gray-500 text-center">I canali appariranno qui dopo la ricerca</li>
             </ul>
         </section>
 
         <section class="flex-1 p-4 bg-gray-900 flex flex-col overflow-y-auto">
-            
             <div class="relative w-full aspect-video bg-black rounded-xl shadow-2xl overflow-hidden mb-6 border border-gray-800">
                 <video id="videoPlayer" controls playsinline crossorigin="anonymous" class="w-full h-full"></video>
             </div>
@@ -131,21 +60,21 @@
                 <div class="p-5 rounded-xl panel-bg border-yellow-600 border-2">
                     <h2 class="text-xl font-bold text-yellow-500 mb-4">🔴 Registra su Server</h2>
                     <div class="mb-4">
-                        <label class="text-xs font-bold text-gray-400 block mb-1">Server Hetzner (lascia vuoto per disabilitare)</label>
-                        <input type="url" id="serverUrl" class="w-full bg-black p-2 rounded border border-gray-700 text-sm" placeholder="http://138.199.196.24:3000" value="http://138.199.196.24:3000">
+                        <label class="text-xs font-bold text-gray-400 block mb-1">Server Hetzner</label>
+                        <input type="url" id="serverUrl" class="w-full bg-black p-2 rounded border border-gray-700 text-sm text-white" value="http://138.199.196.24:3000">
                     </div>
                     <div class="mb-4">
-                        <label class="text-xs font-bold text-gray-400 block mb-1">PIN Server (opzionale - solo se il tuo server lo richiede)</label>
-                        <input type="text" id="serverPin" class="w-full bg-black p-2 rounded border border-gray-700 text-sm" placeholder="Lascia vuoto se non hai PIN" value="">
+                        <label class="text-xs font-bold text-gray-400 block mb-1">PIN Server</label>
+                        <input type="text" id="serverPin" class="w-full bg-black p-2 rounded border border-gray-700 text-sm text-white" value="">
                     </div>
                     <div class="flex gap-3 mb-4">
                         <div class="flex-1">
                             <label class="text-xs font-bold text-gray-400 block mb-1">Ora</label>
-                            <select id="regHour" class="w-full bg-black p-3 rounded border border-gray-700"></select>
+                            <select id="regHour" class="w-full bg-black p-3 rounded border border-gray-700 text-white"></select>
                         </div>
                         <div class="flex-1">
                             <label class="text-xs font-bold text-gray-400 block mb-1">Minuti</label>
-                            <select id="regMin" class="w-full bg-black p-3 rounded border border-gray-700"></select>
+                            <select id="regMin" class="w-full bg-black p-3 rounded border border-gray-700 text-white"></select>
                         </div>
                     </div>
                     <button id="confirmRecordBtn" class="w-full bg-yellow-600 hover:bg-yellow-700 text-black font-bold py-4 rounded-xl transition-colors">Pianifica Registrazione</button>
@@ -154,11 +83,9 @@
                 <div class="p-5 rounded-xl panel-bg border-gray-700 border text-sm">
                     <h2 class="text-lg font-bold text-gray-400 mb-3">ℹ️ Info Ricerca</h2>
                     <div class="space-y-2 text-gray-300">
-                        <p><span class="font-bold text-yellow-500">Liste disponibili:</span> 14</p>
-                        <p><span class="font-bold text-yellow-500">Proxy CORS:</span> 3 con fallback automatico</p>
-                        <p><span class="font-bold text-yellow-500">Ricerca:</span> Automatica</p>
-                        <p><span class="font-bold text-yellow-500">Registrazione:</span> <span id="recordStatus">Configura server</span></p>
-                        <p class="text-xs text-gray-500 mt-4">Versione GitHub con HTTPS - Sistema multi-proxy per massima affidabilità. Configura il server Hetzner per abilitare la registrazione.</p>
+                        <p><span class="font-bold text-yellow-500">Liste:</span> 14 (Globali)</p>
+                        <p><span class="font-bold text-yellow-500">Stato:</span> <span id="recordStatus">Verifica server...</span></p>
+                        <p class="text-xs text-gray-500 mt-4">Sistema v2026 ottimizzato per l'accessibilità e il recupero automatico delle fonti.</p>
                     </div>
                 </div>
             </div>
@@ -166,7 +93,7 @@
     </main>
 
     <script>
-        // 🔍 TUTTE LE LISTE DISPONIBILI
+        // TUTTE LE TUE 14 LISTE ORIGINALI
         const ALL_LISTS = [
             { name: "⭐ Lista Personale (GitHub)", url: "https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u" },
             { name: "📻 TUTTE LE RADIO ITALIANE", url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/ipradioita.m3u" },
@@ -187,45 +114,12 @@
         let allChannels = [];
         let hls = null;
         const video = document.getElementById('videoPlayer');
-        const searchProgress = document.getElementById('searchProgress');
 
-        // Timer per registrazione (scatti di 5 minuti)
+        // Setup drop-down orari
         const hS = document.getElementById('regHour');
         for(let i=0; i<24; i++) hS.add(new Option(i.toString().padStart(2,'0'), i.toString().padStart(2,'0')));
         const mS = document.getElementById('regMin');
         for(let i=0; i<60; i+=5) mS.add(new Option(i.toString().padStart(2,'0'), i.toString().padStart(2,'0')));
-
-        // Verifica server all'avvio
-        document.getElementById('serverUrl').addEventListener('change', checkServer);
-        document.getElementById('serverUrl').addEventListener('blur', checkServer);
-        
-        async function checkServer() {
-            const serverUrl = document.getElementById('serverUrl').value.trim();
-            const statusEl = document.getElementById('recordStatus');
-            
-            if (!serverUrl) {
-                statusEl.textContent = 'Disabilitato';
-                statusEl.style.color = '#9ca3af';
-                return;
-            }
-            
-            try {
-                const r = await fetch(`${serverUrl}/health`, { method: 'GET' });
-                if (r.ok) {
-                    statusEl.textContent = '✅ Attivo';
-                    statusEl.style.color = '#10b981';
-                } else {
-                    statusEl.textContent = '❌ Server offline';
-                    statusEl.style.color = '#ef4444';
-                }
-            } catch {
-                statusEl.textContent = '❌ Non raggiungibile';
-                statusEl.style.color = '#ef4444';
-            }
-        }
-        
-        // Verifica server all'avvio
-        setTimeout(checkServer, 1000);
 
         function comunica(t) {
             const a = document.getElementById('announcer');
@@ -233,470 +127,181 @@
             setTimeout(() => { a.textContent = t; }, 100);
         }
 
-        // RICERCA INTELLIGENTE (Normalizzazione Numeri/Lettere)
+        async function checkServer() {
+            const url = document.getElementById('serverUrl').value.trim();
+            const statusEl = document.getElementById('recordStatus');
+            if(!url) return;
+            try {
+                const r = await fetch(`${url}/health`);
+                statusEl.textContent = r.ok ? '✅ Server Attivo' : '❌ Offline';
+            } catch { statusEl.textContent = '❌ Non raggiungibile'; }
+        }
+        setTimeout(checkServer, 1000);
+
         function normalize(text) {
-            if (!text) return "";
-            return text.toLowerCase()
-                .replace(/zero/g, "0").replace(/uno/g, "1").replace(/due/g, "2")
-                .replace(/tre/g, "3").replace(/quattro/g, "4").replace(/cinque/g, "5")
-                .replace(/sei/g, "6").replace(/sette/g, "7").replace(/otto/g, "8")
-                .replace(/nove/g, "9").replace(/dieci/g, "10").replace(/ventiquattro/g, "24")
-                .replace(/\s+/g, '');
+            return text ? text.toLowerCase().replace(/zero/g, "0").replace(/uno/g, "1").replace(/due/g, "2").replace(/ventiquattro/g, "24").replace(/\s+/g, '') : "";
         }
 
-        // 🔍 FUNZIONE DI RICERCA IN TUTTE LE LISTE (con fallback multi-proxy)
-        async function searchAllLists(query) {
-            if (!query || query.trim().length < 2) {
-                comunica("Scrivi almeno 2 caratteri per cercare");
-                return;
-            }
-
-            allChannels = [];
-            const normalizedQuery = normalize(query);
-            let listsSearched = 0;
-            let channelsFound = 0;
-
-            searchProgress.classList.remove('hidden');
-            searchProgress.innerHTML = "🔄 Ricerca in corso... 0/14 liste";
-            document.getElementById('status').textContent = "🔍 Ricerca in corso...";
-            document.getElementById('searchAllBtn').disabled = true;
-
-            for (const list of ALL_LISTS) {
-                try {
-                    searchProgress.innerHTML = `🔄 Cercando in: ${list.name} (${listsSearched + 1}/14)`;
-                    
-                    // 🌐 Prova 3 proxy CORS con fallback automatico
-                    const txt = await fetchWithFallback(list.url);
-                    
-                    if (txt) {
-                        const channels = parseM3U(txt, list.name);
-                        
-                        // Filtra solo i canali che corrispondono alla ricerca
-                        const matches = channels.filter(c => normalize(c.name).includes(normalizedQuery));
-                        
-                        if (matches.length > 0) {
-                            allChannels.push(...matches);
-                            channelsFound += matches.length;
-                            searchProgress.innerHTML = `✅ ${list.name}: ${matches.length} canali trovati`;
-                            await new Promise(r => setTimeout(r, 300)); // Pausa per leggere
-                        }
-                    }
-                } catch (err) {
-                    console.error(`Errore lista ${list.name}:`, err);
-                }
-                
-                listsSearched++;
-            }
-
-            searchProgress.classList.add('hidden');
-            document.getElementById('searchAllBtn').disabled = false;
-            document.getElementById('status').textContent = `✅ Trovati ${channelsFound} canali in ${listsSearched} liste`;
-            comunica(`Ricerca completata: ${channelsFound} canali trovati`);
-
-            renderChannels();
-        }
-
-        // 🔄 Funzione per provare 3 proxy CORS con fallback
         async function fetchWithFallback(url) {
-            // Proxy 1: AllOrigins (più stabile)
-            try {
-                const proxyUrl1 = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-                const r1 = await fetch(proxyUrl1);
-                if (r1.ok) {
-                    return await r1.text();
-                }
-            } catch (err) {
-                console.log('AllOrigins fallito, provo corsproxy...');
+            const proxies = [
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+                `https://corsproxy.io/?${encodeURIComponent(url)}`,
+                `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
+            ];
+            for (const p of proxies) {
+                try {
+                    const r = await fetch(p);
+                    if (r.ok) return await r.text();
+                } catch (e) {}
             }
-
-            // Proxy 2: Corsproxy.io
-            try {
-                const proxyUrl2 = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-                const r2 = await fetch(proxyUrl2);
-                if (r2.ok) {
-                    return await r2.text();
-                }
-            } catch (err) {
-                console.log('Corsproxy fallito, provo codetabs...');
-            }
-
-            // Proxy 3: CodeTabs
-            try {
-                const proxyUrl3 = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
-                const r3 = await fetch(proxyUrl3);
-                if (r3.ok) {
-                    return await r3.text();
-                }
-            } catch (err) {
-                console.log('Tutti i proxy falliti per:', url);
-            }
-
             return null;
         }
 
-        function parseM3U(txt, sourceName) {
-            const channels = [];
-            const lines = txt.split('\n');
-            let name = "";
+        async function searchAllLists() {
+            const query = document.getElementById('searchBox').value.trim();
+            if (query.length < 2) return comunica("Scrivi almeno 2 caratteri per la ricerca");
             
-            lines.forEach(l => {
-                if (l.startsWith("#EXTINF:")) {
-                    name = l.split(',').pop().trim();
-                } else if (l.startsWith("http") && name) {
-                    channels.push({ 
-                        name: name, 
-                        url: l.trim(),
-                        source: sourceName 
+            allChannels = [];
+            const progress = document.getElementById('searchProgress');
+            progress.classList.remove('hidden');
+            document.getElementById('searchAllBtn').disabled = true;
+
+            for (let i = 0; i < ALL_LISTS.length; i++) {
+                progress.textContent = `Ricerca in: ${ALL_LISTS[i].name} (${i+1}/14)`;
+                const txt = await fetchWithFallback(ALL_LISTS[i].url);
+                if (txt) {
+                    const lines = txt.split('\n');
+                    let name = "";
+                    lines.forEach(l => {
+                        if (l.startsWith("#EXTINF:")) name = l.split(',').pop().trim();
+                        else if (l.startsWith("http") && name) {
+                            if (normalize(name).includes(normalize(query))) {
+                                allChannels.push({ name, url: l.trim(), source: ALL_LISTS[i].name });
+                            }
+                            name = "";
+                        }
                     });
-                    name = "";
                 }
-            });
-            
-            return channels;
+            }
+            progress.classList.add('hidden');
+            document.getElementById('searchAllBtn').disabled = false;
+            document.getElementById('status').textContent = `✅ Trovati ${allChannels.length} canali`;
+            renderChannels();
+            comunica(`Ricerca completata. Trovati ${allChannels.length} canali.`);
         }
 
         function renderChannels() {
             const list = document.getElementById('channelList');
             list.innerHTML = "";
+            const uniqueNames = [...new Set(allChannels.map(c => c.name))];
             
-            if (allChannels.length === 0) {
-                list.innerHTML = '<li class="p-2 text-gray-500">Nessun canale trovato. Prova con un altro termine di ricerca.</li>';
+            if(uniqueNames.length === 0) {
+                list.innerHTML = '<li class="p-2 text-gray-500">Nessun risultato trovato.</li>';
                 return;
             }
 
-            // Raggruppa canali per nome
-            const channelsByName = {};
-            allChannels.forEach((c, index) => {
-                if (!channelsByName[c.name]) {
-                    channelsByName[c.name] = [];
-                }
-                channelsByName[c.name].push({ ...c, originalIndex: index });
-            });
-
-            // Mostra massimo 200 canali unici
-            const uniqueChannels = Object.keys(channelsByName).slice(0, 200);
-            
-            uniqueChannels.forEach(channelName => {
-                const streams = channelsByName[channelName];
-                const firstStream = streams[0];
-                
+            uniqueNames.forEach(name => {
+                const count = allChannels.filter(c => c.name === name).length;
                 const li = document.createElement('li');
-                li.className = "channel-item p-3 bg-gray-700 rounded mb-1 text-sm border-l-4 border-transparent";
+                li.className = "channel-item p-3 bg-gray-700 rounded mb-1 text-sm";
                 li.tabIndex = 0;
-                li.setAttribute('role', 'button');
-                li.style.position = 'relative';
+                li.innerHTML = `<strong>${name}</strong> <span class="opacity-50">(${count} fonti)</span>`;
+                li.onclick = () => autoTryAllSources(name);
+                li.onkeydown = (e) => { if(e.key === 'Enter') autoTryAllSources(name); };
+                list.appendChild(li);
+            });
+        }
+
+        async function autoTryAllSources(channelName) {
+            const sources = allChannels.filter(c => c.name === channelName);
+            comunica(`Tentativo di riproduzione ${channelName}. Provo ${sources.length} fonti.`);
+            
+            for (let i = 0; i < sources.length; i++) {
+                const s = sources[i];
+                document.getElementById('status').textContent = `🔄 Prova fonte ${i+1}/${sources.length} (${s.source})...`;
                 
-                const streamsCount = streams.length > 1 ? ` (${streams.length} fonti)` : '';
-                li.setAttribute('aria-label', `${channelName}${streamsCount}`);
-                
-                li.innerHTML = `
-                    <div class="channel-header">
-                        <strong>${channelName}</strong>${streamsCount}<br>
-                        <span class="text-xs opacity-70">${firstStream.source}</span>
-                    </div>
-                `;
-                
-                // Menu dropdown con tutti gli stream
-                if (streams.length > 1) {
-                    const menu = document.createElement('div');
-                    menu.className = 'stream-menu';
-                    menu.innerHTML = `
-                        <div class="text-xs font-bold mb-2 text-yellow-400">📡 ${streams.length} stream disponibili:</div>
-                    `;
-                    
-                    streams.forEach((stream, idx) => {
-                        const option = document.createElement('div');
-                        option.className = 'stream-option';
-                        option.innerHTML = `
-                            <div class="flex-1 text-xs">
-                                <strong>${stream.source}</strong><br>
-                                <span class="opacity-60">${stream.url.substring(0, 40)}...</span>
-                            </div>
-                            <div class="flex gap-1">
-                                <button class="stream-play-btn" data-index="${stream.originalIndex}">▶ Play</button>
-                                <button class="stream-copy-btn" data-url="${encodeURIComponent(stream.url)}">📋 Copia</button>
-                            </div>
-                        `;
-                        menu.appendChild(option);
-                    });
-                    
-                    li.appendChild(menu);
-                    
-                    // Click sulla testata: toggle menu
-                    li.querySelector('.channel-header').onclick = (e) => {
-                        e.stopPropagation();
-                        // Chiudi altri menu aperti
-                        document.querySelectorAll('.stream-menu.active').forEach(m => {
-                            if (m !== menu) m.classList.remove('active');
-                        });
-                        menu.classList.toggle('active');
-                    };
-                } else {
-                    // Un solo stream: click diretto
-                    li.onclick = () => playWithFallback(channelName, firstStream.originalIndex);
-                }
-                
-                // Attivazione con tastiera
-                li.onkeydown = (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        if (streams.length > 1) {
-                            li.querySelector('.channel-header').click();
-                        } else {
-                            playWithFallback(channelName, firstStream.originalIndex);
+                const success = await new Promise((resolve) => {
+                    let hasResolved = false;
+                    window.activeUrl = s.url;
+                    window.activeName = s.name;
+
+                    if (hls) { hls.destroy(); hls = null; }
+
+                    // Se il browser blocca il link subito, risolviamo in 0.8 secondi
+                    const safetyTimeout = setTimeout(() => {
+                        if (!hasResolved) { 
+                            cleanup();
+                            resolve(false); 
                         }
+                    }, 10000); // 10 secondi di pazienza massima
+
+                    const checkPlaying = setInterval(() => {
+                        if (video.readyState >= 3 && !video.paused) {
+                            hasResolved = true;
+                            cleanup();
+                            resolve(true);
+                        }
+                    }, 500);
+
+                    const onFatalError = () => {
+                        if (!hasResolved) {
+                            hasResolved = true;
+                            cleanup();
+                            resolve(false);
+                        }
+                    };
+
+                    function cleanup() {
+                        clearTimeout(safetyTimeout);
+                        clearInterval(checkPlaying);
+                        video.removeEventListener('error', onFatalError);
                     }
-                };
-                
-                list.appendChild(li);
-            });
 
-            // Event delegation per i pulsanti nel menu
-            list.addEventListener('click', (e) => {
-                if (e.target.classList.contains('stream-play-btn')) {
-                    e.stopPropagation();
-                    const index = parseInt(e.target.dataset.index);
-                    const channel = allChannels[index];
-                    playWithFallback(channel.name, index);
-                    // Chiudi il menu
-                    e.target.closest('.stream-menu').classList.remove('active');
-                }
-                
-                if (e.target.classList.contains('stream-copy-btn')) {
-                    e.stopPropagation();
-                    const url = decodeURIComponent(e.target.dataset.url);
-                    navigator.clipboard.writeText(url).then(() => {
-                        const originalText = e.target.textContent;
-                        e.target.textContent = '✅';
-                        e.target.style.background = '#10b981';
-                        setTimeout(() => {
-                            e.target.textContent = originalText;
-                            e.target.style.background = '';
-                        }, 1500);
-                        comunica("Link copiato negli appunti");
-                    });
-                }
-            });
+                    video.addEventListener('error', onFatalError);
 
-            if (Object.keys(channelsByName).length > 200) {
-                const li = document.createElement('li');
-                li.className = "p-2 text-yellow-400 text-center";
-                li.textContent = `... e altri ${Object.keys(channelsByName).length - 200} canali. Affina la ricerca per vedere tutto.`;
-                list.appendChild(li);
-            }
-        }
-
-        // 🎬 RIPRODUZIONE CON FALLBACK AUTOMATICO
-        async function playWithFallback(channelName, startIndex) {
-            // Trova tutti i canali con lo stesso nome
-            const sameNameChannels = allChannels.filter(c => c.name === channelName);
-            
-            if (sameNameChannels.length === 0) {
-                comunica("Canale non trovato");
-                return;
-            }
-
-            comunica(`Tentativo riproduzione: ${channelName}`);
-            document.getElementById('status').textContent = `🔄 Caricamento ${channelName}...`;
-
-            // Trova l'indice del canale cliccato
-            let channelIndex = allChannels.findIndex((c, i) => i === startIndex);
-            let attempts = 0;
-            let maxAttempts = sameNameChannels.length;
-            let lastAttemptedUrl = null;
-            let lastAttemptedSource = null;
-
-            // Prova tutti i canali con lo stesso nome
-            for (let i = 0; i < maxAttempts; i++) {
-                const currentIndex = (channelIndex + i) % allChannels.length;
-                const channel = allChannels[currentIndex];
-                
-                // Verifica che sia lo stesso canale (stesso nome)
-                if (channel.name !== channelName) continue;
-                
-                attempts++;
-                lastAttemptedUrl = channel.url;
-                lastAttemptedSource = channel.source;
-                
-                const attemptMsg = maxAttempts > 1 ? ` (tentativo ${attempts}/${maxAttempts})` : '';
-                document.getElementById('status').textContent = `🔄 ${channelName}${attemptMsg}`;
-                
-                console.log(`Provo: ${channel.source} - ${channel.url.substring(0, 50)}`);
-                
-                // Prova a riprodurre usando la funzione ORIGINALE
-                playChannelDirect(channel.name, channel.url);
-                
-                // Aspetta un po' per vedere se si carica
-                await new Promise(r => setTimeout(r, 3000));
-                
-                // Controlla se sta riproducendo
-                if (!video.paused || video.readyState > 2) {
-                    comunica(`In riproduzione da: ${channel.source}`);
-                    document.getElementById('status').textContent = `✅ ${channelName} (${channel.source})`;
-                    window.activeUrl = channel.url;
-                    window.activeName = channel.name;
-                    return; // Trovato uno che funziona!
-                }
-            }
-
-            // Nessuno ha funzionato - salva l'ultimo tentato
-            window.activeUrl = lastAttemptedUrl;
-            window.activeName = channelName;
-            
-            comunica(`Tutti i ${attempts} stream di ${channelName} non sono disponibili. Ultimo URL salvato per copia.`);
-            document.getElementById('status').textContent = `❌ ${channelName} non disponibile (puoi copiare l'ultimo link)`;
-        }
-
-        // 🎥 FUNZIONE ORIGINALE DAL FILE CHE FUNZIONA (ESATTA COPIA)
-        function playChannelDirect(name, url) {
-            console.log(`Richiesta riproduzione: ${name} - ${url}`);
-            
-            window.activeUrl = url;
-            window.activeName = name;
-
-            if (hls) {
-                hls.destroy();
-                hls = null;
-            }
-
-            if (url.includes('.m3u8') && Hls.isSupported()) {
-                console.log("Rilevato stream HLS, uso HLS.js");
-                hls = new Hls();
-                hls.loadSource(url);
-                hls.attachMedia(video);
-                hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                    video.play();
+                    if (s.url.includes('.m3u8') && Hls.isSupported()) {
+                        hls = new Hls({ manifestLoadingTimeOut: 5000 });
+                        hls.loadSource(s.url);
+                        hls.attachMedia(video);
+                        hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(onFatalError));
+                        hls.on(Hls.Events.ERROR, (e, data) => { if(data.fatal) onFatalError(); });
+                    } else {
+                        video.src = s.url;
+                        video.play().catch(onFatalError);
+                    }
                 });
-                hls.on(Hls.Events.ERROR, (event, data) => {
-                    console.error('Errore HLS:', data);
-                });
-            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                console.log("Rilevato stream HLS, uso il player nativo");
-                video.src = url;
-                video.play();
-            } else {
-                console.log("Formato non HLS, uso il player nativo");
-                video.src = url;
-                video.play();
+
+                if (success) {
+                    document.getElementById('status').textContent = `✅ In onda: ${channelName}`;
+                    comunica(`${channelName} avviato correttamente da ${s.source}`);
+                    return; 
+                }
+                console.log(`Fonte ${i+1} fallita, passo alla successiva.`);
             }
+
+            document.getElementById('status').textContent = "❌ Nessuna fonte funzionante";
+            comunica("Spiacente, tutte le fonti per questo canale sono offline o bloccate dal browser.");
         }
 
-        function play(name, url) {
-            playChannelDirect(name, url);
-        }
+        // Eventi pulsanti
+        document.getElementById('searchAllBtn').onclick = searchAllLists;
+        document.getElementById('searchBox').onkeypress = (e) => { if(e.key==='Enter') searchAllLists(); };
+        document.getElementById('volUp').onclick = () => { video.volume = Math.min(1, video.volume + 0.1); comunica("Volume " + Math.round(video.volume*100) + "%"); };
+        document.getElementById('volDown').onclick = () => { video.volume = Math.max(0, video.volume - 0.1); comunica("Volume " + Math.round(video.volume*100) + "%"); };
+        document.getElementById('muteBtn').onclick = () => { video.muted = !video.muted; comunica(video.muted ? "Muto attivo" : "Audio riattivato"); };
+        document.getElementById('copyBtn').onclick = () => { if(window.activeUrl) { navigator.clipboard.writeText(window.activeUrl); comunica("Link copiato"); } };
 
-        // Eventi
-        document.getElementById('searchAllBtn').onclick = () => {
-            const query = document.getElementById('searchBox').value;
-            searchAllLists(query);
-        };
-
-        document.getElementById('searchBox').onkeypress = (e) => {
-            if (e.key === 'Enter') {
-                const query = document.getElementById('searchBox').value;
-                searchAllLists(query);
-            }
-        };
-
-        document.getElementById('copyBtn').onclick = () => {
-            if (!window.activeUrl) {
-                comunica("Nessun canale selezionato.");
-                document.getElementById('status').textContent = "⚠️ Seleziona prima un canale";
-                return;
-            }
-            
-            navigator.clipboard.writeText(window.activeUrl)
-                .then(() => {
-                    const originalText = document.getElementById('copyBtn').textContent;
-                    document.getElementById('copyBtn').textContent = '✅ Copiato!';
-                    document.getElementById('copyBtn').style.background = '#10b981'; // verde
-                    comunica(`Link copiato: ${window.activeUrl.substring(0, 50)}...`);
-                    document.getElementById('status').textContent = "✅ Link copiato negli appunti";
-                    
-                    // Ripristina dopo 2 secondi
-                    setTimeout(() => {
-                        document.getElementById('copyBtn').textContent = originalText;
-                        document.getElementById('copyBtn').style.background = '';
-                    }, 2000);
-                })
-                .catch(() => {
-                    comunica("Errore nella copia del link");
-                    document.getElementById('status').textContent = "❌ Errore copia";
-                });
-        };
-
-        document.getElementById('volUp').onclick = () => { 
-            video.volume = Math.min(1, video.volume + 0.1); 
-            comunica("Volume " + Math.round(video.volume*100) + "%"); 
-        };
-        
-        document.getElementById('volDown').onclick = () => { 
-            video.volume = Math.max(0, video.volume - 0.1); 
-            comunica("Volume " + Math.round(video.volume*100) + "%"); 
-        };
-        
-        document.getElementById('muteBtn').onclick = () => { 
-            video.muted = !video.muted; 
-            comunica(video.muted ? "Audio silenziato" : "Audio riattivato"); 
-        };
-
-        // Registrazione su server Hetzner
         document.getElementById('confirmRecordBtn').onclick = async () => {
-            const serverUrl = document.getElementById('serverUrl').value.trim();
-            const serverPin = document.getElementById('serverPin').value.trim();
-            
-            if (!serverUrl) {
-                comunica("⚠️ Configura prima l'URL del server");
-                document.getElementById('status').textContent = "⚠️ Server non configurato";
-                return;
-            }
-            
-            if (!window.activeUrl) {
-                comunica("⚠️ Seleziona prima un canale da registrare");
-                document.getElementById('status').textContent = "⚠️ Nessun canale selezionato";
-                return;
-            }
-            
-            const payload = { 
-                url: window.activeUrl, 
-                channelName: window.activeName || 'Canale', 
-                time: `${hS.value}:${mS.value}`, 
-                duration: "60"
-            };
-            
-            // Aggiungi PIN solo se presente
-            if (serverPin) {
-                payload.pin = serverPin;
-            }
-            
+            if(!window.activeUrl) return comunica("Seleziona prima un canale");
+            const payload = { url: window.activeUrl, channelName: window.activeName, time: `${hS.value}:${mS.value}`, duration: "60" };
             try {
-                document.getElementById('status').textContent = "📡 Invio richiesta registrazione...";
-                const r = await fetch(`${serverUrl}/api/record-scheduled`, { 
+                const r = await fetch(`${document.getElementById('serverUrl').value}/api/record-scheduled`, { 
                     method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
+                    headers: {'Content-Type': 'application/json'}, 
                     body: JSON.stringify(payload) 
                 });
-                
-                if (r.ok) {
-                    const result = await r.json();
-                    comunica(`✅ Registrazione programmata: ${window.activeName} alle ${hS.value}:${mS.value}`);
-                    document.getElementById('status').textContent = `✅ Registrazione programmata`;
-                } else {
-                    const error = await r.text();
-                    if (r.status === 403 || r.status === 401) {
-                        comunica("❌ Errore: PIN richiesto o errato");
-                        document.getElementById('status').textContent = "❌ PIN richiesto/errato";
-                    } else {
-                        comunica("❌ Errore: verifica configurazione server");
-                        document.getElementById('status').textContent = "❌ Errore registrazione";
-                    }
-                    console.error('Errore server:', error);
-                }
-            } catch (e) {
-                comunica("❌ Impossibile connettersi al server");
-                document.getElementById('status').textContent = "❌ Server non raggiungibile";
-                console.error('Errore connessione:', e);
-            }
+                comunica(r.ok ? "Registrazione programmata con successo" : "Errore server registrazione");
+            } catch { comunica("Impossibile connettersi al server"); }
         };
     </script>
 </body>
