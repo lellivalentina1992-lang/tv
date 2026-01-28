@@ -44,6 +44,7 @@
                 <button id="loadAllBtn" class="bg-yellow-600 text-black font-bold py-3 rounded-xl">Carica Tutto</button>
             </div>
             <div id="searchProgressText" class="text-xs text-yellow-500 mb-2 font-bold" aria-live="polite"></div>
+            <div id="connectionStatus" class="text-xs text-blue-400 mb-2 font-mono" aria-live="polite"></div>
             <div id="duplicateInfo" class="text-xs text-green-400 mb-2 font-bold" aria-live="polite"></div>
             <ul id="channelList" class="flex-1 space-y-1 overflow-y-auto"></ul>
         </section>
@@ -64,8 +65,8 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 <div class="p-5 rounded-xl panel-bg border-yellow-600 border-2">
                     <h2 class="text-xl font-bold text-yellow-500 mb-4">Registrazione</h2>
-                    <input type="url" id="serverUrl" class="w-full bg-black p-3 mb-4 rounded border border-gray-700 text-white" placeholder="URL Server">
-                    <input type="text" id="serverPin" class="w-full bg-black p-3 mb-4 rounded border border-gray-700 text-white" placeholder="PIN">
+                    <input type="url" id="serverUrl" class="w-full bg-black p-3 mb-4 rounded border border-gray-700 text-white" placeholder="URL Server (es: http://192.168.1.100:3000)">
+                    <input type="text" id="serverPin" class="w-full bg-black p-3 mb-4 rounded border border-gray-700 text-white" placeholder="PIN (opzionale)">
                     <div class="flex gap-3 mb-4">
                         <select id="regHour" class="flex-1 bg-black p-3 rounded border border-gray-700 text-white"></select>
                         <select id="regMin" class="flex-1 bg-black p-3 rounded border border-gray-700 text-white"></select>
@@ -76,6 +77,21 @@
                 <div class="p-5 rounded-xl panel-bg border-gray-700 border">
                     <h2 class="text-xl font-bold text-yellow-500 mb-4">Copia Link Rapido</h2>
                     <div id="directLinksArea" class="flex flex-col max-h-[400px] overflow-y-auto"></div>
+                </div>
+            </div>
+
+            <div class="p-5 rounded-xl panel-bg border-blue-600 border-2 mb-8">
+                <h2 class="text-xl font-bold text-blue-400 mb-4">Impostazioni Avanzate</h2>
+                <div class="grid grid-cols-1 gap-4">
+                    <div>
+                        <label class="block text-white text-sm font-bold mb-2">ScrapingAnt API Key (opzionale)</label>
+                        <input type="text" id="scrapingantKey" class="w-full bg-black p-3 rounded border border-gray-700 text-white" placeholder="Inserisci la tua API key di ScrapingAnt">
+                        <small class="text-gray-400">Lascia vuoto per usare solo CORS proxy gratuiti. Registrati su scrapingant.com per ottenere 10,000 richieste/mese gratis.</small>
+                    </div>
+                    <div class="flex gap-3">
+                        <button id="saveSettingsBtn" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl">Salva Impostazioni</button>
+                        <button id="loadSettingsBtn" class="flex-1 bg-gray-600 text-white font-bold py-3 rounded-xl">Carica Impostazioni</button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -104,6 +120,18 @@
         ];
 
         const EPG_URL = "https://epg.zappr.stream/gui.xml";
+        
+        // Sistema CORS multiplo con fallback
+        const CORS_PROXIES = [
+            '', // Prova prima senza proxy (diretto)
+            'https://api.allorigins.win/raw?url=',
+            'https://corsproxy.io/?',
+            'https://cors.sh/'
+        ];
+        
+        // Carica impostazioni da localStorage
+        let SCRAPINGANT_API_KEY = localStorage.getItem('scrapingantKey') || '';
+        
         let epgDoc = null;
         let allChannels = [];
         let hlsPlayer = null, dashPlayer = null, sessionLogs = [];
@@ -112,6 +140,53 @@
         const hS = document.getElementById('regHour'), mS = document.getElementById('regMin');
         for(let i=0; i<24; i++) hS.add(new Option(i.toString().padStart(2,'0'), i.toString().padStart(2,'0')));
         for(let i=0; i<60; i+=5) mS.add(new Option(i.toString().padStart(2,'0'), i.toString().padStart(2,'0')));
+
+        // Carica impostazioni salvate all'avvio
+        function loadSettings() {
+            const savedKey = localStorage.getItem('scrapingantKey');
+            const savedServerUrl = localStorage.getItem('serverUrl');
+            const savedServerPin = localStorage.getItem('serverPin');
+            
+            if (savedKey) {
+                document.getElementById('scrapingantKey').value = savedKey;
+                SCRAPINGANT_API_KEY = savedKey;
+            }
+            if (savedServerUrl) {
+                document.getElementById('serverUrl').value = savedServerUrl;
+            }
+            if (savedServerPin) {
+                document.getElementById('serverPin').value = savedServerPin;
+            }
+        }
+
+        // Salva impostazioni in localStorage
+        function saveSettings() {
+            const key = document.getElementById('scrapingantKey').value.trim();
+            const serverUrl = document.getElementById('serverUrl').value.trim();
+            const serverPin = document.getElementById('serverPin').value.trim();
+            
+            if (key) {
+                localStorage.setItem('scrapingantKey', key);
+                SCRAPINGANT_API_KEY = key;
+            } else {
+                localStorage.removeItem('scrapingantKey');
+                SCRAPINGANT_API_KEY = '';
+            }
+            
+            if (serverUrl) {
+                localStorage.setItem('serverUrl', serverUrl);
+            } else {
+                localStorage.removeItem('serverUrl');
+            }
+            
+            if (serverPin) {
+                localStorage.setItem('serverPin', serverPin);
+            } else {
+                localStorage.removeItem('serverPin');
+            }
+            
+            comunica('Impostazioni salvate correttamente.');
+        }
 
         function logEvent(msg) { 
             sessionLogs.push(`[${new Date().toLocaleTimeString()}] ${msg}`); 
@@ -163,6 +238,65 @@
 
         function smartIncludes(str, query) {
             return normalize(str).includes(normalize(query));
+        }
+
+        async function fetchWithFallback(url) {
+            const statusDiv = document.getElementById('connectionStatus');
+            
+            // 1. Prova tutti i CORS proxy in sequenza
+            for (let i = 0; i < CORS_PROXIES.length; i++) {
+                const proxy = CORS_PROXIES[i];
+                const finalUrl = proxy ? proxy + encodeURIComponent(url) : url;
+                
+                const proxyName = proxy ? 
+                    (proxy.includes('allorigins') ? 'AllOrigins' : 
+                     proxy.includes('corsproxy') ? 'CorsProxy.io' : 
+                     proxy.includes('cors.sh') ? 'CORS.sh' : 'diretto') 
+                    : 'Diretto';
+                
+                try {
+                    if (statusDiv) statusDiv.textContent = `Tentativo: ${proxyName}...`;
+                    
+                    const r = await fetch(finalUrl, { 
+                        signal: AbortSignal.timeout(10000) // timeout 10s
+                    });
+                    
+                    if (r.ok) {
+                        if (statusDiv) statusDiv.textContent = `Connesso: ${proxyName}`;
+                        logEvent(`Successo con: ${proxyName}`);
+                        return r;
+                    }
+                } catch (err) {
+                    logEvent(`${proxyName} fallito: ${err.message}`);
+                    continue; // Prova il prossimo
+                }
+            }
+            
+            // 2. Se tutti i CORS falliscono, prova ScrapingAnt
+            if (SCRAPINGANT_API_KEY) {
+                try {
+                    if (statusDiv) statusDiv.textContent = 'Tentativo: ScrapingAnt API...';
+                    logEvent('Tentativo con ScrapingAnt API...');
+                    const scrapingAntUrl = `https://api.scrapingant.com/v2/general?url=${encodeURIComponent(url)}&x-api-key=${SCRAPINGANT_API_KEY}`;
+                    const r = await fetch(scrapingAntUrl, {
+                        signal: AbortSignal.timeout(15000) // timeout 15s per API
+                    });
+                    
+                    if (r.ok) {
+                        if (statusDiv) statusDiv.textContent = 'Connesso: ScrapingAnt API';
+                        logEvent('Successo con ScrapingAnt API');
+                        return r;
+                    }
+                } catch (err) {
+                    logEvent(`ScrapingAnt fallito: ${err.message}`);
+                }
+            } else if (statusDiv) {
+                statusDiv.textContent = 'ScrapingAnt: chiave API non configurata';
+            }
+            
+            // 3. Tutti i metodi falliti
+            if (statusDiv) statusDiv.textContent = 'Errore: tutti i metodi falliti';
+            throw new Error('Tutti i metodi di accesso falliti');
         }
 
         function isItalianChannel(channelName, url) {
@@ -247,7 +381,7 @@
 
         async function loadEPG() {
             try {
-                const r = await fetch(EPG_URL);
+                const r = await fetchWithFallback(EPG_URL);
                 const txt = await r.text();
                 const parser = new DOMParser();
                 epgDoc = parser.parseFromString(txt, 'text/xml');
@@ -297,12 +431,12 @@
 
         async function searchInList(listObj, query) {
             try {
-                const r = await fetch(listObj.url);
-                if (!r.ok) return [];
+                const r = await fetchWithFallback(listObj.url);
                 const txt = await r.text();
                 const parsed = parseM3U(txt, listObj.name);
                 return parsed.filter(c => smartIncludes(c.name, query));
-            } catch {
+            } catch (err) {
+                logEvent(`Lista ${listObj.name} non accessibile: ${err.message}`);
                 return [];
             }
         }
@@ -401,8 +535,7 @@
 
             const promises = ALL_LISTS.map(async (list) => {
                 try {
-                    const r = await fetch(list.url);
-                    if (!r.ok) return [];
+                    const r = await fetchWithFallback(list.url);
                     const txt = await r.text();
                     const parsed = parseM3U(txt, list.name);
                     totalBeforeFilter += parsed.length;
@@ -415,7 +548,8 @@
                     completed++;
                     prog.textContent = `${completed}/${ALL_LISTS.length} liste completate`;
                     return filtered;
-                } catch {
+                } catch (err) {
+                    logEvent(`Errore lista ${list.name}: ${err.message}`);
                     completed++;
                     prog.textContent = `${completed}/${ALL_LISTS.length} liste completate`;
                     return [];
@@ -627,6 +761,11 @@
 
         document.getElementById('searchBtn').onclick = searchSpecific;
         document.getElementById('loadAllBtn').onclick = loadAllChannels;
+        document.getElementById('saveSettingsBtn').onclick = saveSettings;
+        document.getElementById('loadSettingsBtn').onclick = () => {
+            loadSettings();
+            comunica('Impostazioni caricate.');
+        };
         document.getElementById('searchBox').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -683,6 +822,8 @@
             }
         };
 
+        // Carica impostazioni salvate all'avvio
+        loadSettings();
         loadEPG();
     </script>
 </body>
