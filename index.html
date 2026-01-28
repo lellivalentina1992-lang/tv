@@ -620,12 +620,15 @@
             if (deduplicatedChannels.length === 0) {
                 updateStatus('Caricamento automatico...');
                 await loadAllChannels();
+                return;
             }
 
             const results = [];
+            const resultIndices = [];
             for (let i = 0; i < deduplicatedChannels.length; i++) {
                 if (normalizeChannelName(deduplicatedChannels[i].name).includes(normalizeChannelName(query))) {
                     results.push(deduplicatedChannels[i]);
+                    resultIndices.push(i);
                 }
             }
 
@@ -641,7 +644,7 @@
             }
 
             updateStatus('Trovato ' + results.length + ' canale' + (results.length > 1 ? 'i' : '') + ' con ' + totalSources + ' fonti totali');
-            displayChannels(results);
+            displayChannelsFiltered(results, resultIndices);
         }
 
         function displayChannels(channels) {
@@ -673,6 +676,41 @@
                         if (e.key === 'Enter') playChannelWithFallback(idx);
                     });
                 })(index);
+
+                channelsList.appendChild(div);
+            }
+        }
+
+        function displayChannelsFiltered(channels, originalIndices) {
+            channelsList.innerHTML = '';
+
+            for (let index = 0; index < channels.length; index++) {
+                const channel = channels[index];
+                const originalIndex = originalIndices[index];
+                const div = document.createElement('div');
+                div.className = 'channel-group';
+                div.setAttribute('role', 'listitem');
+                div.setAttribute('tabindex', '0');
+                
+                const displayName = channel.number ? '[' + channel.number + '] ' + channel.name : channel.name;
+                
+                let sourcesHTML = '';
+                for (let idx = 0; idx < channel.sources.length; idx++) {
+                    const source = channel.sources[idx];
+                    sourcesHTML += '<div class="source-item" data-source-index="' + idx + '" role="listitem">' + 
+                                  source.source + ' - ' + detectStreamType(source.url) + '</div>';
+                }
+                
+                div.innerHTML = '<div class="channel-name">' + displayName + '</div>' +
+                               '<div class="channel-sources">' + channel.sources.length + ' fonti disponibili</div>' +
+                               '<div class="sources-list" role="list">' + sourcesHTML + '</div>';
+
+                (function(idx) {
+                    div.addEventListener('click', function() { playChannelWithFallback(idx); });
+                    div.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') playChannelWithFallback(idx);
+                    });
+                })(originalIndex);
 
                 channelsList.appendChild(div);
             }
