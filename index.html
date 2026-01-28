@@ -620,7 +620,6 @@
             if (deduplicatedChannels.length === 0) {
                 updateStatus('Caricamento automatico...');
                 await loadAllChannels();
-                return;
             }
 
             const results = [];
@@ -731,7 +730,20 @@
                 allGroups[i].classList.remove('active');
             }
             
-            const channelDiv = channelsList.children[channelIndex];
+            let channelDiv = null;
+            for (let i = 0; i < allGroups.length; i++) {
+                const nameDiv = allGroups[i].querySelector('.channel-name');
+                if (nameDiv && nameDiv.textContent.includes(channel.name)) {
+                    channelDiv = allGroups[i];
+                    break;
+                }
+            }
+            
+            if (!channelDiv) {
+                showError('Errore: elemento canale non trovato');
+                return;
+            }
+            
             channelDiv.classList.add('active');
             channelDiv.classList.add('expanded');
 
