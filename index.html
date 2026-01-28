@@ -31,9 +31,9 @@
 
     <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
         <section class="w-full md:w-1/3 lg:w-1/4 p-4 bg-gray-800 flex flex-col overflow-y-auto border-r border-gray-700">
-            <h2 class="text-lg font-bold mb-3 text-yellow-400">🔍 Ricerca</h2>
+            <h2 class="text-lg font-bold mb-3 text-yellow-400">Ricerca</h2>
             <input type="search" id="searchBox" class="bg-gray-900 border border-gray-600 rounded p-4 w-full mb-4 text-white text-lg" placeholder="Es: Canale 5" autofocus>
-            <button id="searchAllBtn" class="w-full bg-yellow-600 text-black font-bold py-3 rounded-xl mb-4">🔎 Cerca in 18 Liste</button>
+            <button id="searchAllBtn" class="w-full bg-yellow-600 text-black font-bold py-3 rounded-xl mb-4">Cerca in 18 Liste</button>
             <div id="searchProgressText" class="text-xs text-yellow-500 mb-2 font-bold" aria-live="polite"></div>
             <ul id="channelList" class="flex-1 space-y-1 overflow-y-auto"></ul>
         </section>
@@ -44,16 +44,16 @@
             </div>
             
             <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
-                <button id="fullscreenBtn" class="btn-action bg-yellow-700">📺 Schermo Intero</button>
+                <button id="fullscreenBtn" class="btn-action bg-yellow-700">Schermo Intero</button>
                 <button id="volDown" class="btn-action">Volume -</button>
                 <button id="volUp" class="btn-action">Volume +</button>
                 <button id="muteBtn" class="btn-action">Muto (M)</button>
-                <button id="copyDebugBtn" class="btn-action bg-gray-700">📋 Copia Log</button>
+                <button id="copyDebugBtn" class="btn-action bg-gray-700">Copia Log</button>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 <div class="p-5 rounded-xl panel-bg border-yellow-600 border-2">
-                    <h2 class="text-xl font-bold text-yellow-500 mb-4">🔴 Registrazione</h2>
+                    <h2 class="text-xl font-bold text-yellow-500 mb-4">Registrazione</h2>
                     <input type="url" id="serverUrl" class="w-full bg-black p-3 mb-4 rounded border border-gray-700 text-white" placeholder="URL Server">
                     <input type="text" id="serverPin" class="w-full bg-black p-3 mb-4 rounded border border-gray-700 text-white" placeholder="PIN">
                     <div class="flex gap-3 mb-4">
@@ -64,7 +64,7 @@
                 </div>
 
                 <div class="p-5 rounded-xl panel-bg border-gray-700 border">
-                    <h2 class="text-xl font-bold text-yellow-500 mb-4">🔗 Copia Link Rapido</h2>
+                    <h2 class="text-xl font-bold text-yellow-500 mb-4">Copia Link Rapido</h2>
                     <div id="directLinksArea" class="flex flex-col max-h-[400px] overflow-y-auto"></div>
                 </div>
             </div>
@@ -74,23 +74,23 @@
     <script>
         const ALL_LISTS = [
             { name: "Lista Personale", url: "https://raw.githubusercontent.com/lellivalentina1992-lang/tv/refs/heads/main/lista_personale.m3u" },
-            { name: "🇮🇹 Tundrak TV", url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvita.m3u" },
-            { name: "📻 Radio ITA", url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/ipradioita.m3u" },
-            { name: "🆕 TV Italia Fulgione", url: "http://davidefulgione.it/tv.m3u" },
-            { name: "🆕 Tivu.m3u Fulgione", url: "http://www.davidefulgione.it/tivu.m3u" },
-            { name: "💎 Dario-S Italia", url: "https://raw.githubusercontent.com/dario-s/italia-iptv/master/italia.m3u" },
-            { name: "🎬 Pluto TV", url: "https://raw.githubusercontent.com/TheWorldOfIPTV/WorldOfIPTV/master/Lists/PlutoTV/IT.m3u" },
-            { name: "🎬 Rakuten TV", url: "https://raw.githubusercontent.com/TheWorldOfIPTV/WorldOfIPTV/master/Lists/RakutenTV/IT.m3u" },
-            { name: "🎥 Plex TV", url: "https://raw.githubusercontent.com/TheWorldOfIPTV/WorldOfIPTV/master/Lists/Plex/IT.m3u" },
-            { name: "🏛️ Pura TV", url: "https://raw.githubusercontent.com/PuraTV/PuraTV.github.io/master/m3u8/it.m3u" },
-            { name: "🌍 IPTV-Org Italia", url: "https://iptv-org.github.io/iptv/languages/ita.m3u" },
-            { name: "🆓 Free-TV", url: "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist/it.m3u" },
-            { name: "🎵 In The Mix", url: "http://inthemix.altervista.org/tv.m3u" },
-            { name: "📡 TivuStream", url: "https://tivustream.website/urls/listm3u" },
-            { name: "📱 Samsung Plus", url: "https://raw.githubusercontent.com/TheWorldOfIPTV/WorldOfIPTV/master/Lists/SamsungTVPlus/IT.m3u" },
-            { name: "📺 DF-Fulgi GitHub", url: "https://raw.githubusercontent.com/df-fulgi/iptv/master/italy.m3u" },
-            { name: "🇮🇹 Tvditutto", url: "https://raw.githubusercontent.com/Tvditutto/z-m3u/main/italy.m3u" },
-            { name: "🐼 PandaSat", url: "http://www.pandasat.info/iptv/kodi" }
+            { name: "Tundrak TV", url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvita.m3u" },
+            { name: "Radio ITA", url: "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/ipradioita.m3u" },
+            { name: "TV Italia Fulgione", url: "http://davidefulgione.it/tv.m3u" },
+            { name: "Tivu.m3u Fulgione", url: "http://www.davidefulgione.it/tivu.m3u" },
+            { name: "Dario-S Italia", url: "https://raw.githubusercontent.com/dario-s/italia-iptv/master/italia.m3u" },
+            { name: "Pluto TV", url: "https://raw.githubusercontent.com/TheWorldOfIPTV/WorldOfIPTV/master/Lists/PlutoTV/IT.m3u" },
+            { name: "Rakuten TV", url: "https://raw.githubusercontent.com/TheWorldOfIPTV/WorldOfIPTV/master/Lists/RakutenTV/IT.m3u" },
+            { name: "Plex TV", url: "https://raw.githubusercontent.com/TheWorldOfIPTV/WorldOfIPTV/master/Lists/Plex/IT.m3u" },
+            { name: "Pura TV", url: "https://raw.githubusercontent.com/PuraTV/PuraTV.github.io/master/m3u8/it.m3u" },
+            { name: "IPTV-Org Italia", url: "https://iptv-org.github.io/iptv/languages/ita.m3u" },
+            { name: "Free-TV", url: "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist/it.m3u" },
+            { name: "In The Mix", url: "http://inthemix.altervista.org/tv.m3u" },
+            { name: "TivuStream", url: "https://tivustream.website/urls/listm3u" },
+            { name: "Samsung Plus", url: "https://raw.githubusercontent.com/TheWorldOfIPTV/WorldOfIPTV/master/Lists/SamsungTVPlus/IT.m3u" },
+            { name: "DF-Fulgi GitHub", url: "https://raw.githubusercontent.com/df-fulgi/iptv/master/italy.m3u" },
+            { name: "Tvditutto", url: "https://raw.githubusercontent.com/Tvditutto/z-m3u/main/italy.m3u" },
+            { name: "PandaSat", url: "http://www.pandasat.info/iptv/kodi" }
         ];
 
         const EPG_URL = "https://epg.zappr.stream/gui.xml";
@@ -103,10 +103,18 @@
         for(let i=0; i<24; i++) hS.add(new Option(i.toString().padStart(2,'0'), i.toString().padStart(2,'0')));
         for(let i=0; i<60; i+=5) mS.add(new Option(i.toString().padStart(2,'0'), i.toString().padStart(2,'0')));
 
-        function logEvent(msg) { sessionLogs.push(`[${new Date().toLocaleTimeString()}] ${msg}`); console.log(msg); }
-        function comunica(t) { logEvent(t); const a = document.getElementById('announcer'); a.textContent = ""; setTimeout(() => { a.textContent = t; }
+        function logEvent(msg) { 
+            sessionLogs.push(`[${new Date().toLocaleTimeString()}] ${msg}`); 
+            console.log(msg); 
+        }
+        
+        function comunica(t) { 
+            logEvent(t); 
+            const a = document.getElementById('announcer'); 
+            a.textContent = ""; 
+            setTimeout(() => { a.textContent = t; }, 50);
+        }
 
-        // Clipboard: works reliably only on HTTPS or http://localhost. Provide fallback + explicit feedback.
         async function safeCopy(text) {
             try {
                 if (navigator.clipboard && window.isSecureContext) {
@@ -114,270 +122,157 @@
                     return true;
                 }
             } catch (e) {
-                // fall through to fallback
+                // fallthrough
             }
 
-            // Fallback for http/file contexts: try execCommand
             try {
                 const ta = document.createElement('textarea');
                 ta.value = text;
                 ta.setAttribute('readonly', '');
                 ta.style.position = 'fixed';
-                ta.style.top = '-9999px';
                 ta.style.left = '-9999px';
                 document.body.appendChild(ta);
-                ta.focus();
                 ta.select();
-                const ok = document.execCommand && document.execCommand('copy');
+                const success = document.execCommand('copy');
                 document.body.removeChild(ta);
-                if (ok) return true;
+                if (success) return true;
             } catch (e) {
-                // ignore
+                // fail
             }
 
-            comunica("Copia non disponibile qui. Apri il file in HTTPS o su http://localhost.");
-            return false;
-        }
-, 100); }
-
-        const digitToWord = {'0':'zero','1':'uno','2':'due','3':'tre','4':'quattro','5':'cinque','6':'sei','7':'sette','8':'otto','9':'nove'};
-        const wordToDigit = {'zero':'0','uno':'1','due':'2','tre':'3','quattro':'4','cinque':'5','sei':'6','sette':'7','otto':'8','nove':'9'};
-
-        function baseNormalize(t) {
-            // Lowercase, remove bracket tags, strip accents, keep only [a-z0-9]
-            return (t || "")
-                .toLowerCase()
-                .replace(/\[.*?\]/g, '')
-                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                .replace(/[^a-z0-9]/g, '');
-        }
-
-        function digitsToWords(s) {
-            let out = s;
-            for (const d in digitToWord) out = out.replace(new RegExp(d, 'g'), digitToWord[d]);
-            return out;
-        }
-
-        function wordsToDigits(s) {
-            // Replace longer words first to reduce accidental partial overlaps
-            const order = ['quattro','cinque','sette','otto','nove','zero','uno','due','tre','sei'];
-            let out = s;
-            for (const w of order) out = out.replace(new RegExp(w, 'g'), wordToDigit[w]);
-            return out;
-        }
-
-        function normalizeVariants(t) {
-            const b = baseNormalize(t);
-            // Variants help matching "Canale 5" vs "CanaleCinque" (and viceversa)
-            const v1 = digitsToWords(b);
-            const v2 = wordsToDigits(b);
-            return Array.from(new Set([b, v1, v2].filter(Boolean)));
-        }
-
-        function smartIncludes(name, query) {
-            const nameVars = normalizeVariants(name);
-            const queryVars = normalizeVariants(query);
-            for (const nv of nameVars) {
-                for (const qv of queryVars) {
-                    if (qv && nv.includes(qv)) return true;
-                }
-            }
+            comunica("Copia manuale richiesta: impossibile copiare automaticamente.");
             return false;
         }
 
-        function dedupeChannels(channels) {
-            // Remove exact duplicates (same normalized name + same URL), keep all distinct URLs per channel.
-            const seen = new Set();
-            const out = [];
-            for (const c of channels) {
-                const key = baseNormalize(c.name) + "||" + (c.url || "");
-                if (seen.has(key)) continue;
-                seen.add(key);
-                out.push(c);
-            }
-            return out;
+        function normalize(s) { 
+            return s.toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]/g, ''); 
         }
 
-        function uniqueChannelDisplayNames(channels) {
-            // Create one display name per normalized channel name (avoid "Rai1" / "Rai 1" duplicates in UI)
-            const map = new Map(); // normName -> bestDisplayName
-            for (const c of channels) {
-                const norm = baseNormalize(c.name);
-                if (!norm) continue;
-                if (!map.has(norm)) {
-                    map.set(norm, c.name);
-                } else {
-                    const cur = map.get(norm);
-                    // Prefer the shorter, cleaner looking name
-                    if ((c.name || "").length < (cur || "").length) map.set(norm, c.name);
-                }
-            }
-            return Array.from(map.values());
-        }
-
-        async function fetchWithProxy(url) {
-            const p = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-            try { const r = await fetch(p); return r.ok ? await r.text() : null; } catch(e) { return null; }
+        function smartIncludes(str, query) {
+            return normalize(str).includes(normalize(query));
         }
 
         async function loadEPG() {
-            const xmlText = await fetchWithProxy(EPG_URL);
-            if (xmlText) epgDoc = new DOMParser().parseFromString(xmlText, "text/xml");
-        }
-        loadEPG();
-
-                function parseEpgTime(t) {
-            // EPG times often look like: "YYYYMMDDhhmmss +0100" or "YYYYMMDDhhmmss+0100"
-            if (!t) return null;
-            const s = (t + "").trim();
-            const mm = s.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})\s*([+-]\d{4})?/);
-            if (!mm) return null;
-            const y = parseInt(mm[1], 10), mo = parseInt(mm[2], 10), d = parseInt(mm[3], 10);
-            const hh = parseInt(mm[4], 10), mi = parseInt(mm[5], 10), ss = parseInt(mm[6], 10);
-            const off = mm[7] || "+0000";
-            const sign = off.startsWith("-") ? -1 : 1;
-            const offH = parseInt(off.slice(1, 3), 10);
-            const offM = parseInt(off.slice(3, 5), 10);
-            const offsetMinutes = sign * (offH * 60 + offM);
-
-            // Build a UTC timestamp for the *local* time, then subtract offset to get real UTC.
-            const utcMillis = Date.UTC(y, mo - 1, d, hh, mi, ss) - offsetMinutes * 60 * 1000;
-            return new Date(utcMillis);
-        }
-
-        function findEpgChannelId(channelName) {
-            if (!epgDoc) return null;
-
-            const targetNorm = baseNormalize(channelName);
-
-            // Alias map for common variants
-            const aliasMap = {
-                "rai1": ["rai1", "raiuno", "rai 1", "raiuno hd", "rai 1 hd", "raiuno hevc", "rai 1 hevc"],
-                "rai2": ["rai2", "raidue", "rai 2", "raidue hd", "rai 2 hd"],
-                "rai3": ["rai3", "raitre", "rai 3", "raitre hd", "rai 3 hd"],
-                "canale5": ["canale5", "canale 5", "c5", "canale 5 hd"],
-                "italia1": ["italia1", "italia 1", "i1", "italia 1 hd"],
-                "rete4": ["rete4", "rete 4", "rete4 hd", "rete 4 hd"],
-                "la7": ["la7", "la 7", "la7 hd", "la 7 hd"],
-                "tv8": ["tv8", "tv 8", "tv8 hd", "tv 8 hd"],
-                "nove": ["nove", "canale nove", "nove hd"]
-            };
-
-            const aliasKeys = aliasMap[targetNorm] || [];
-            const candidates = [channelName, ...aliasKeys];
-
-            const channels = Array.from(epgDoc.getElementsByTagName('channel')).map(ch => {
-                const disp = ch.getElementsByTagName('display-name')[0]?.textContent || "";
-                return { id: ch.getAttribute('id'), disp };
-            });
-
-            // 1) Exact normalized match first
-            for (const cand of candidates) {
-                const cleanTarget = baseNormalize(cand);
-                for (const c of channels) {
-                    if (baseNormalize(c.disp) === cleanTarget) return c.id;
-                }
+            try {
+                const r = await fetch(EPG_URL);
+                const txt = await r.text();
+                const parser = new DOMParser();
+                epgDoc = parser.parseFromString(txt, 'text/xml');
+                logEvent("EPG caricato.");
+            } catch { 
+                logEvent("EPG non disponibile."); 
             }
-
-            // 2) Flexible match with simple scoring
-            let best = null;
-            for (const cand of candidates) {
-                for (const c of channels) {
-                    const ok = smartIncludes(c.disp, cand) || smartIncludes(cand, c.disp);
-                    if (!ok) continue;
-
-                    const a = baseNormalize(c.disp);
-                    const b = baseNormalize(cand);
-                    const lenPenalty = Math.abs(a.length - b.length);
-                    const hdBonus = (b.includes("hd") && a.includes("hd")) ? -2 : 0;
-                    const score = lenPenalty + hdBonus;
-
-                    if (!best || score < best.score) best = { id: c.id, score };
-                }
-            }
-            return best ? best.id : null;
         }
 
         function getProgramInfo(channelName) {
-            if (!epgDoc) return "";
-            const channelId = findEpgChannelId(channelName);
-            if (!channelId) return "";
-
-            const now = new Date();
-            const progs = epgDoc.getElementsByTagName('programme');
-            for (let p of progs) {
-                if (p.getAttribute('channel') !== channelId) continue;
-                const start = parseEpgTime(p.getAttribute('start'));
-                const stop = parseEpgTime(p.getAttribute('stop'));
-                if (!start || !stop) continue;
-                if (now >= start && now <= stop) {
-                    return p.getElementsByTagName('title')[0]?.textContent || "";
+            if (!epgDoc) return null;
+            const now = Date.now();
+            const channels = epgDoc.querySelectorAll('channel');
+            for (let ch of channels) {
+                const dispName = ch.querySelector('display-name')?.textContent || '';
+                if (!smartIncludes(dispName, channelName)) continue;
+                const cid = ch.getAttribute('id');
+                const progs = epgDoc.querySelectorAll(`programme[channel="${cid}"]`);
+                for (let p of progs) {
+                    const start = new Date(p.getAttribute('start').replace(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2}).*/, '$1-$2-$3T$4:$5:$6')).getTime();
+                    const stop = new Date(p.getAttribute('stop').replace(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2}).*/, '$1-$2-$3T$4:$5:$6')).getTime();
+                    if (now >= start && now <= stop) {
+                        const title = p.querySelector('title')?.textContent || 'Senza titolo';
+                        return title;
+                    }
                 }
             }
-            return "";
+            return null;
+        }
+
+        function parseM3U(content, source) {
+            const lines = content.split('\n');
+            const result = [];
+            let currentName = null;
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line.startsWith('#EXTINF')) {
+                    const match = line.match(/,(.*)$/);
+                    currentName = match ? match[1].trim() : 'Sconosciuto';
+                } else if (line && !line.startsWith('#') && currentName) {
+                    result.push({ name: currentName, url: line, source });
+                    currentName = null;
+                }
+            }
+            return result;
+        }
+
+        async function searchInList(listObj, query) {
+            try {
+                const r = await fetch(listObj.url);
+                if (!r.ok) return [];
+                const txt = await r.text();
+                const parsed = parseM3U(txt, listObj.name);
+                return parsed.filter(c => smartIncludes(c.name, query));
+            } catch {
+                return [];
+            }
         }
 
         async function startSearch() {
             const query = document.getElementById('searchBox').value.trim();
-            if (query.length < 2) return comunica("Scrivi almeno 2 lettere.");
+            if (!query) return comunica("Inserisci un termine di ricerca.");
+            
             allChannels = [];
-                        const progressEl = document.getElementById('searchProgressText');
-            comunica(`Ricerca smart per "${query}" avviata.`);
+            document.getElementById('channelList').innerHTML = "";
+            document.getElementById('directLinksArea').innerHTML = "";
+            comunica(`Ricerca di: ${query}`);
 
-            for (let i = 0; i < ALL_LISTS.length; i++) {
-                const msg = `Lista ${i + 1} di ${ALL_LISTS.length} (${ALL_LISTS[i].name})`;
-                progressEl.textContent = msg;
-                document.getElementById('status').textContent = msg;
-                
-                // FEEDBACK OGNI DUE LISTE
-                if (i % 2 === 0 || i === ALL_LISTS.length - 1) comunica(msg);
+            let completed = 0;
+            const prog = document.getElementById('searchProgressText');
 
-                const content = await fetchWithProxy(ALL_LISTS[i].url);
-                if (content) {
-                    const lines = content.split(/\r?\n|\r/);
-                    let curName = "";
-                    lines.forEach(l => {
-                        const line = l.trim();
-                        if (line.toUpperCase().startsWith("#EXTINF:")) curName = line.split(',').pop().trim();
-                        else if (line.toLowerCase().startsWith("http") && curName) {
-                            if (smartIncludes(curName, query)) {
-                                allChannels.push({ name: curName, url: line, source: ALL_LISTS[i].name });
-                            }
-                            curName = "";
-                        }
-                    });
-                }
-            }
-            document.getElementById('status').textContent = "✅ Ricerca completata";
-            allChannels = dedupeChannels(allChannels);
+            const promises = ALL_LISTS.map(async (list) => {
+                const results = await searchInList(list, query);
+                allChannels.push(...results);
+                completed++;
+                prog.textContent = `${completed}/${ALL_LISTS.length} liste completate`;
+                return results;
+            });
 
-            try { 
-                const ctx = new AudioContext(); const o = ctx.createOscillator(); const g = ctx.createGain();
-                o.connect(g); g.connect(ctx.destination); o.frequency.value = 880; g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-                o.start(); o.stop(ctx.currentTime + 0.5);
-            } catch(e) {}
-            renderChannels(); renderDirectLinks();
-            comunica(`Ricerca completata. Trovati ${allChannels.length} canali.`);
+            await Promise.all(promises);
+
+            const uniqueNames = [...new Set(allChannels.map(c => c.name))];
+            comunica(`Trovati ${uniqueNames.length} canali univoci in ${allChannels.length} fonti totali.`);
+
+            renderChannelList(uniqueNames);
+            renderDirectLinks();
         }
 
-        function renderChannels() {
-            const ul = document.getElementById('channelList'); ul.innerHTML = "";
-            uniqueChannelDisplayNames(allChannels).forEach(n => {
-                const li = document.createElement('li'); li.className = "channel-item"; li.tabIndex = 0;
-                li.innerHTML = `<strong>${n}</strong>`;
-                li.onclick = () => autoPlay(n);
-                li.onkeydown = (e) => { if(e.key === 'Enter') autoPlay(n); };
-                ul.appendChild(li);
+        function renderChannelList(names) {
+            const list = document.getElementById('channelList');
+            list.innerHTML = "";
+            names.forEach(name => {
+                const count = allChannels.filter(c => c.name === name).length;
+                const li = document.createElement('li');
+                const btn = document.createElement('button');
+                btn.className = "channel-item";
+                btn.textContent = `${name} (${count} fonti)`;
+                btn.onclick = () => autoPlay(name);
+                li.appendChild(btn);
+                list.appendChild(li);
             });
         }
 
         function renderDirectLinks() {
-            const area = document.getElementById('directLinksArea'); area.innerHTML = "";
+            const area = document.getElementById('directLinksArea'); 
+            area.innerHTML = "";
             allChannels.forEach(c => {
                 const fmt = c.url.includes('.mpd') ? 'DASH' : (c.url.includes('.m3u8') ? 'HLS' : 'DIRETTO');
-                const btn = document.createElement('button'); btn.className = "copy-btn-direct";
+                const btn = document.createElement('button'); 
+                btn.className = "copy-btn-direct";
                 btn.innerHTML = `<strong>${c.name}</strong> - ${c.source}<br><small>Formato: ${fmt}</small>`;
-                btn.onclick = async () => { const ok = await safeCopy(c.url); if (ok) comunica(`Copiato ${c.name} - ${fmt}`); };
+                btn.onclick = async () => { 
+                    const ok = await safeCopy(c.url); 
+                    if (ok) comunica(`Copiato ${c.name} - ${fmt}`); 
+                };
                 area.appendChild(btn);
             });
         }
@@ -385,9 +280,11 @@
         async function autoPlay(name) {
             const sources = allChannels.filter(c => smartIncludes(c.name, name));
             comunica(`Avvio ${name}. Provo ${sources.length} fonti.`);
+            
             for (let i = 0; i < sources.length; i++) {
                 const s = sources[i];
                 document.getElementById('status').textContent = `Fonte ${i+1}/${sources.length}`;
+                
                 const ok = await new Promise(res => {
                     let settled = false;
                     const timers = [];
@@ -419,8 +316,13 @@
 
                     const onDashError = () => finish(false);
 
-                    // reset players
-                    try { if (hlsPlayer) { hlsPlayer.destroy(); hlsPlayer = null; } } catch(e) {}
+                    try { 
+                        if (hlsPlayer) { 
+                            hlsPlayer.destroy(); 
+                            hlsPlayer = null; 
+                        } 
+                    } catch(e) {}
+                    
                     try {
                         if (dashPlayer) {
                             if (dashPlayer.reset) dashPlayer.reset();
@@ -431,13 +333,11 @@
 
                     video.src = "";
 
-                    // success can arrive via multiple signals
                     video.addEventListener('playing', onPlaying, { once: true });
                     video.addEventListener('canplay', onSoftReady);
                     video.addEventListener('loadedmetadata', onSoftReady);
                     video.addEventListener('error', onVideoError, { once: true });
 
-                    // attach source
                     if (s.url.includes('.mpd')) {
                         dashPlayer = dashjs.MediaPlayer().create();
                         if (dashPlayer.on) dashPlayer.on('error', onDashError);
@@ -453,7 +353,6 @@
                         video.play().catch(()=>{});
                     }
 
-                    // timeout progressivo: 8s -> 12s -> 20s
                     [8000, 12000, 20000].forEach((ms, idx, arr) => {
                         timers.push(setTimeout(() => {
                             if (settled) return;
@@ -461,11 +360,13 @@
                         }, ms));
                     });
                 });
+                
                 if (ok) {
-                    window.activeUrl = s.url; window.activeName = s.name;
+                    window.activeUrl = s.url; 
+                    window.activeName = s.name;
                     const prog = getProgramInfo(name);
                     comunica(`In onda ${name} da ${s.source}. ${prog ? 'Programma attuale: ' + prog : ''}`);
-                    document.getElementById('status').textContent = `✅ ${name}`;
+                    document.getElementById('status').textContent = `${name}`;
                     return;
                 }
             }
@@ -474,25 +375,65 @@
 
         window.addEventListener('keydown', e => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-            if (e.key.toLowerCase() === 'm') { e.preventDefault(); video.muted = !video.muted; comunica(video.muted ? "Muto" : "Audio attivo"); }
-            if (e.key === 'ArrowUp') { e.preventDefault(); video.volume = Math.min(1, video.volume + 0.1); comunica(`Volume ${Math.round(video.volume*100)}%`); }
-            if (e.key === 'ArrowDown') { e.preventDefault(); video.volume = Math.max(0, video.volume - 0.1); comunica(`Volume ${Math.round(video.volume*100)}%`); }
+            if (e.key.toLowerCase() === 'm') { 
+                e.preventDefault(); 
+                video.muted = !video.muted; 
+                comunica(video.muted ? "Muto" : "Audio attivo"); 
+            }
+            if (e.key === 'ArrowUp') { 
+                e.preventDefault(); 
+                video.volume = Math.min(1, video.volume + 0.1); 
+                comunica(`Volume ${Math.round(video.volume*100)}%`); 
+            }
+            if (e.key === 'ArrowDown') { 
+                e.preventDefault(); 
+                video.volume = Math.max(0, video.volume - 0.1); 
+                comunica(`Volume ${Math.round(video.volume*100)}%`); 
+            }
         });
 
         document.getElementById('searchAllBtn').onclick = startSearch;
-        document.getElementById('volUp').onclick = () => { video.volume = Math.min(1, video.volume + 0.1); comunica(`Volume ${Math.round(video.volume*100)}%`); };
-        document.getElementById('volDown').onclick = () => { video.volume = Math.max(0, video.volume - 0.1); comunica(`Volume ${Math.round(video.volume*100)}%`); };
-        document.getElementById('muteBtn').onclick = () => { video.muted = !video.muted; comunica(video.muted ? "Muto" : "Audio attivo"); };
+        document.getElementById('volUp').onclick = () => { 
+            video.volume = Math.min(1, video.volume + 0.1); 
+            comunica(`Volume ${Math.round(video.volume*100)}%`); 
+        };
+        document.getElementById('volDown').onclick = () => { 
+            video.volume = Math.max(0, video.volume - 0.1); 
+            comunica(`Volume ${Math.round(video.volume*100)}%`); 
+        };
+        document.getElementById('muteBtn').onclick = () => { 
+            video.muted = !video.muted; 
+            comunica(video.muted ? "Muto" : "Audio attivo"); 
+        };
         document.getElementById('fullscreenBtn').onclick = () => video.requestFullscreen?.() || video.webkitRequestFullscreen?.();
-        document.getElementById('copyDebugBtn').onclick = async () => { const ok = await safeCopy(sessionLogs.join('\n')); if (ok) comunica("Log copiati."); };
+        document.getElementById('copyDebugBtn').onclick = async () => { 
+            const ok = await safeCopy(sessionLogs.join('\n')); 
+            if (ok) comunica("Log copiati."); 
+        };
         document.getElementById('confirmRecordBtn').onclick = async () => {
             const sUrl = document.getElementById('serverUrl').value.trim();
             if(!sUrl || !window.activeUrl) return comunica("Dati mancanti.");
-            const payload = { url: window.activeUrl, channelName: window.activeName, time: `${hS.value}:${mS.value}`, duration: "60" };
+            const payload = { 
+                url: window.activeUrl, 
+                channelName: window.activeName, 
+                time: `${hS.value}:${mS.value}`, 
+                duration: "60" 
+            };
             const pin = document.getElementById('serverPin').value.trim();
             if(pin) payload.pin = pin;
-            try { const r = await fetch(`${sUrl}/api/record-scheduled`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) }); comunica(r.ok ? "Registrato!" : "Errore"); } catch { comunica("Server off"); }
+            try { 
+                const r = await fetch(`${sUrl}/api/record-scheduled`, { 
+                    method:'POST', 
+                    headers:{'Content-Type':'application/json'}, 
+                    body:JSON.stringify(payload) 
+                }); 
+                comunica(r.ok ? "Registrato!" : "Errore"); 
+            } catch { 
+                comunica("Server off"); 
+            }
         };
+
+        loadEPG();
     </script>
 </body>
 </html>
