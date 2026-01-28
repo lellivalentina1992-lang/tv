@@ -31,15 +31,18 @@
 
     <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
         <section class="w-full md:w-1/3 lg:w-1/4 p-4 bg-gray-800 flex flex-col overflow-y-auto border-r border-gray-700">
-            <h2 class="text-lg font-bold mb-3 text-yellow-400">Ricerca</h2>
-            <input type="search" id="searchBox" class="bg-gray-900 border border-gray-600 rounded p-4 w-full mb-4 text-white text-lg" placeholder="Es: Canale 5" autofocus>
+            <h2 class="text-lg font-bold mb-3 text-yellow-400">Lista Canali</h2>
             <div class="flex gap-2 mb-4">
                 <label class="flex items-center gap-2 bg-gray-900 p-3 rounded border border-gray-600 cursor-pointer flex-1">
                     <input type="checkbox" id="italianOnlyFilter" class="w-5 h-5" checked>
-                    <span class="text-white text-sm font-bold">Filtra solo canali italiani (disattiva per vedere tutto)</span>
+                    <span class="text-white text-sm font-bold">Solo canali italiani</span>
                 </label>
             </div>
-            <button id="searchAllBtn" class="w-full bg-yellow-600 text-black font-bold py-3 rounded-xl mb-4">Cerca in 18 Liste</button>
+            <input type="search" id="searchBox" class="bg-gray-900 border border-gray-600 rounded p-4 w-full mb-3 text-white text-lg" placeholder="Cerca canale (es: RAI)" autocomplete="off">
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                <button id="searchBtn" class="bg-blue-600 text-white font-bold py-3 rounded-xl">Cerca</button>
+                <button id="loadAllBtn" class="bg-yellow-600 text-black font-bold py-3 rounded-xl">Carica Tutto</button>
+            </div>
             <div id="searchProgressText" class="text-xs text-yellow-500 mb-2 font-bold" aria-live="polite"></div>
             <div id="duplicateInfo" class="text-xs text-green-400 mb-2 font-bold" aria-live="polite"></div>
             <ul id="channelList" class="flex-1 space-y-1 overflow-y-auto"></ul>
@@ -304,9 +307,12 @@
             }
         }
 
-        async function startSearch() {
+        async function searchSpecific() {
             const query = document.getElementById('searchBox').value.trim();
-            if (!query) return comunica("Inserisci un termine di ricerca.");
+            if (!query) {
+                comunica("Inserisci un termine di ricerca.");
+                return;
+            }
             
             const italianOnly = document.getElementById('italianOnlyFilter').checked;
             
@@ -315,23 +321,29 @@
             document.getElementById('channelList').innerHTML = "";
             document.getElementById('directLinksArea').innerHTML = "";
             document.getElementById('duplicateInfo').textContent = "";
-            comunica(`Ricerca di: ${query}${italianOnly ? ' (filtro italiano attivo)' : ' (tutti i canali)'}`);
+            comunica(`Ricerca di "${query}" in 18 liste${italianOnly ? ' (solo italiani)' : ''}`);
 
             let completed = 0;
             const prog = document.getElementById('searchProgressText');
 
             const promises = ALL_LISTS.map(async (list) => {
-                const results = await searchInList(list, query);
-                totalBeforeFilter += results.length;
-                
-                // Applica filtro italiano se attivo
-                const filtered = italianOnly ? 
-                    results.filter(c => isItalianChannel(c.name, c.url)) : 
-                    results;
-                allChannels.push(...filtered);
-                completed++;
-                prog.textContent = `${completed}/${ALL_LISTS.length} liste completate`;
-                return filtered;
+                try {
+                    const results = await searchInList(list, query);
+                    totalBeforeFilter += results.length;
+                    
+                    // Applica filtro italiano se attivo
+                    const filtered = italianOnly ? 
+                        results.filter(c => isItalianChannel(c.name, c.url)) : 
+                        results;
+                    allChannels.push(...filtered);
+                    completed++;
+                    prog.textContent = `${completed}/${ALL_LISTS.length} liste completate`;
+                    return filtered;
+                } catch {
+                    completed++;
+                    prog.textContent = `${completed}/${ALL_LISTS.length} liste completate`;
+                    return [];
+                }
             });
 
             await Promise.all(promises);
@@ -348,10 +360,10 @@
             
             // Statistiche filtro
             const excludedCount = totalBeforeFilter - allChannels.length;
-            let statsMessage = `Trovati ${uniqueNames.length} canali univoci in ${allChannels.length} fonti totali.`;
+            let statsMessage = `Trovati ${uniqueNames.length} canali per "${query}" da ${allChannels.length} fonti.`;
             
             if (italianOnly && excludedCount > 0) {
-                statsMessage += ` Esclusi ${excludedCount} canali non italiani.`;
+                statsMessage += ` Esclusi ${excludedCount} non italiani.`;
             }
             
             comunica(statsMessage);
@@ -359,10 +371,86 @@
             // Info doppioni
             if (totalDuplicates > 0) {
                 document.getElementById('duplicateInfo').textContent = 
-                    `Rilevati ${totalDuplicates} doppioni. Ogni canale mostra tutte le fonti disponibili.`;
+                    `${totalDuplicates} varianti trovate.`;
             } else if (italianOnly && excludedCount > 0) {
                 document.getElementById('duplicateInfo').textContent = 
-                    `Filtro italiano: ${excludedCount} canali esclusi. Disattiva il filtro per vederli tutti.`;
+                    `Filtro italiano: ${excludedCount} canali esclusi.`;
+            }
+
+            if (uniqueNames.length === 0) {
+                document.getElementById('channelList').innerHTML = '<li style="padding: 1rem; color: #fbbf24;">Nessun canale trovato. Prova a disattivare il filtro italiano o cerca un altro termine.</li>';
+            } else {
+                renderChannelList(duplicateGroups);
+            }
+            
+            renderDirectLinks();
+        }
+        
+        async function loadAllChannels() {
+            const italianOnly = document.getElementById('italianOnlyFilter').checked;
+            
+            allChannels = [];
+            let totalBeforeFilter = 0;
+            document.getElementById('channelList').innerHTML = "";
+            document.getElementById('directLinksArea').innerHTML = "";
+            document.getElementById('duplicateInfo').textContent = "";
+            comunica(`Caricamento di TUTTI i canali da 18 liste${italianOnly ? ' (solo italiani)' : ''}`);
+
+            let completed = 0;
+            const prog = document.getElementById('searchProgressText');
+
+            const promises = ALL_LISTS.map(async (list) => {
+                try {
+                    const r = await fetch(list.url);
+                    if (!r.ok) return [];
+                    const txt = await r.text();
+                    const parsed = parseM3U(txt, list.name);
+                    totalBeforeFilter += parsed.length;
+                    
+                    // Applica filtro italiano se attivo
+                    const filtered = italianOnly ? 
+                        parsed.filter(c => isItalianChannel(c.name, c.url)) : 
+                        parsed;
+                    allChannels.push(...filtered);
+                    completed++;
+                    prog.textContent = `${completed}/${ALL_LISTS.length} liste completate`;
+                    return filtered;
+                } catch {
+                    completed++;
+                    prog.textContent = `${completed}/${ALL_LISTS.length} liste completate`;
+                    return [];
+                }
+            });
+
+            await Promise.all(promises);
+
+            // Rileva doppioni
+            const duplicateGroups = findDuplicates(allChannels);
+            const uniqueNames = Object.keys(duplicateGroups);
+            
+            // Conta doppioni
+            let totalDuplicates = 0;
+            Object.values(duplicateGroups).forEach(group => {
+                if (group.length > 1) totalDuplicates += group.length - 1;
+            });
+            
+            // Statistiche filtro
+            const excludedCount = totalBeforeFilter - allChannels.length;
+            let statsMessage = `Caricati ${uniqueNames.length} canali univoci da ${allChannels.length} fonti.`;
+            
+            if (italianOnly && excludedCount > 0) {
+                statsMessage += ` Esclusi ${excludedCount} non italiani.`;
+            }
+            
+            comunica(statsMessage);
+            
+            // Info doppioni
+            if (totalDuplicates > 0) {
+                document.getElementById('duplicateInfo').textContent = 
+                    `${totalDuplicates} varianti disponibili. Usa la ricerca per filtrare.`;
+            } else if (italianOnly && excludedCount > 0) {
+                document.getElementById('duplicateInfo').textContent = 
+                    `Filtro italiano: ${excludedCount} canali esclusi.`;
             }
 
             renderChannelList(duplicateGroups);
@@ -385,11 +473,11 @@
                 const btn = document.createElement('button');
                 btn.className = "channel-item";
                 
-                // Mostra se ci sono doppioni
+                // Mostra il numero corretto di fonti
                 if (count > 1) {
-                    btn.innerHTML = `<strong>${displayName}</strong><br><small>${count} fonti disponibili</small>`;
+                    btn.innerHTML = `<strong>${displayName}</strong><br><small>${count} ${count === 1 ? 'fonte' : 'fonti'}: ${group.map(g => g.source).join(', ')}</small>`;
                 } else {
-                    btn.innerHTML = `<strong>${displayName}</strong><br><small>1 fonte - ${group[0].source}</small>`;
+                    btn.innerHTML = `<strong>${displayName}</strong><br><small>${group[0].source}</small>`;
                 }
                 
                 btn.onclick = () => autoPlay(displayName);
@@ -416,11 +504,17 @@
 
         async function autoPlay(name) {
             const sources = allChannels.filter(c => smartIncludes(c.name, name));
-            comunica(`Avvio ${name}. Provo ${sources.length} fonti.`);
+            
+            if (sources.length === 0) {
+                comunica(`Nessuna fonte disponibile per ${name}.`);
+                return;
+            }
+            
+            comunica(`Avvio ${name}. Tentativo su ${sources.length} ${sources.length === 1 ? 'fonte' : 'fonti'}.`);
             
             for (let i = 0; i < sources.length; i++) {
                 const s = sources[i];
-                document.getElementById('status').textContent = `Fonte ${i+1}/${sources.length}`;
+                document.getElementById('status').textContent = `Prova ${i+1}/${sources.length}: ${s.source}`;
                 
                 const ok = await new Promise(res => {
                     let settled = false;
@@ -502,12 +596,14 @@
                     window.activeUrl = s.url; 
                     window.activeName = s.name;
                     const prog = getProgramInfo(name);
-                    comunica(`In onda ${name} da ${s.source}. ${prog ? 'Programma attuale: ' + prog : ''}`);
-                    document.getElementById('status').textContent = `${name}`;
+                    comunica(`In onda ${name} da ${s.source}. ${prog ? 'Programma: ' + prog : ''}`);
+                    document.getElementById('status').textContent = `${name} - ${s.source}`;
                     return;
                 }
             }
-            comunica("Nessuna fonte risponde.");
+            
+            comunica(`${name}: tutte le ${sources.length} ${sources.length === 1 ? 'fonte non risponde' : 'fonti non rispondono'}.`);
+            document.getElementById('status').textContent = 'Errore riproduzione';
         }
 
         window.addEventListener('keydown', e => {
@@ -529,7 +625,24 @@
             }
         });
 
-        document.getElementById('searchAllBtn').onclick = startSearch;
+        document.getElementById('searchBtn').onclick = searchSpecific;
+        document.getElementById('loadAllBtn').onclick = loadAllChannels;
+        document.getElementById('searchBox').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchSpecific();
+            }
+        });
+        document.getElementById('italianOnlyFilter').addEventListener('change', () => {
+            if (allChannels.length > 0) {
+                const hasSearchTerm = document.getElementById('searchBox').value.trim();
+                if (hasSearchTerm) {
+                    searchSpecific(); // Ricerca con nuovo filtro
+                } else {
+                    loadAllChannels(); // Ricarica tutto con nuovo filtro
+                }
+            }
+        });
         document.getElementById('volUp').onclick = () => { 
             video.volume = Math.min(1, video.volume + 0.1); 
             comunica(`Volume ${Math.round(video.volume*100)}%`); 
