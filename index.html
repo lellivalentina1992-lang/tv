@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TV ULTRA PRO v2026 - Versione Integrale</title>
+    <title>TV ULTRA PRO v2026 - Fix 0 Canali</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -159,23 +159,6 @@
 
         .recording-timer.active { display: flex; }
 
-        .search-area {
-            margin-top: 40px;
-            padding-top: 25px;
-            border-top: 2px solid #333;
-        }
-
-        .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
-
-        input[type="text"], input[type="password"] {
-            flex: 1;
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #444;
-            background: #2a2a2a;
-            color: white;
-        }
-
         .settings-section {
             margin-top: 30px;
             background: #252525;
@@ -190,7 +173,7 @@
     <h1>TV ULTRA PRO v2026</h1>
 
     <div class="status-bar" id="mainStatus" role="status" aria-live="polite">
-        Sistema in avvio... controllo 18 liste.
+        Inizializzazione sistema...
     </div>
 
     <div class="progress-container">
@@ -256,7 +239,7 @@
     </div>
 
     <div class="debug-console" id="debugLog" role="log" aria-live="polite">
-        [Sistema] Log pronto.
+        [Sistema] Log di attività pronto.
     </div>
 
     <div class="settings-section">
@@ -328,7 +311,6 @@
             'https://api.codetabs.com/v1/proxy?quest='
         ];
 
-        // 1. Prova Proxy Gratuiti
         if (attempt <= freeProxies.length) {
             const proxyUrl = freeProxies[attempt - 1] + encodeURIComponent(finalUrl);
             try {
@@ -345,7 +327,6 @@
             }
         }
 
-        // 2. Fallback su ScrapingAnt
         if (apiKey) {
             log(`Proxy gratuiti falliti per ${listName}. Uso ScrapingAnt...`, true);
             try {
@@ -354,8 +335,9 @@
                     body: JSON.stringify({url: finalUrl, browser: false})
                 });
                 if (res.ok) {
+                    const json = await res.json();
                     log(`Caricata: ${listName} (via ScrapingAnt)`);
-                    return await res.text();
+                    return json.content; // Ritorna il contenuto M3U estratto dal JSON
                 }
             } catch (e) { log(`Fallimento totale per ${listName}`, true); }
         }
@@ -363,36 +345,43 @@
     }
 
     async function initDB() {
-        setStatus("Caricamento liste (Ondate di 3)...", true);
+        setStatus("Caricamento liste in corso...", true);
         db = [];
         let loaded = 0;
-        const batchSize = 3;
+        const batchSize = 2;
 
         for (let i = 0; i < M3U_SOURCES.length; i += batchSize) {
             const batch = M3U_SOURCES.slice(i, i + batchSize);
             const promises = batch.map(async (src) => {
                 try {
-                    const text = await fetchWithCORS(src.url, src.name);
-                    parse(text, src.name);
-                    loaded++;
-                    pBar.style.width = Math.round((loaded / M3U_SOURCES.length) * 100) + '%';
-                    updateGroups();
-                } catch (e) { log(`ERRORE: ${src.name} saltata.`, true); }
+                    const content = await fetchWithCORS(src.url, src.name);
+                    if (content) {
+                        parse(content, src.name);
+                        loaded++;
+                        pBar.style.width = Math.round((loaded / M3U_SOURCES.length) * 100) + '%';
+                        updateGroups();
+                    }
+                } catch (e) { log(`Saltata: ${src.name}`, true); }
             });
             await Promise.allSettled(promises);
-            await new Promise(r => setTimeout(r, 600));
+            await new Promise(r => setTimeout(r, 800));
         }
         setStatus(`Database pronto. ${Object.keys(grouped).length} canali trovati.`);
     }
 
     function parse(data, srcName) {
-        const lines = data.split('\n');
+        if (!data || typeof data !== 'string') return;
+        const lines = data.split(/\r?\n/);
         let cur = null;
         lines.forEach(l => {
             l = l.trim();
             if (l.startsWith('#EXTINF:')) {
-                const m = l.match(/,(.+)$/);
-                if (m) cur = { name: m[1].trim(), src: srcName };
+                // Parsing più robusto del nome (tutto ciò che segue l'ultima virgola)
+                const commaIndex = l.lastIndexOf(',');
+                if (commaIndex !== -1) {
+                    const name = l.substring(commaIndex + 1).trim();
+                    if (name) cur = { name: name, src: srcName };
+                }
             } else if (l && !l.startsWith('#') && cur) {
                 cur.url = l;
                 db.push(cur);
@@ -413,7 +402,7 @@
     async function playLCN(name) {
         const k = name.toLowerCase().replace(/[^a-z0-9]/g, '');
         const entry = grouped[k];
-        if (!entry) { setStatus(`Canale ${name} non trovato.`, true); return; }
+        if (!entry) { setStatus(`Canale ${name} non ancora caricato.`, true); return; }
 
         setStatus(`Connessione a ${name}...`);
         for (let l of entry.links) {
@@ -467,7 +456,8 @@
     function vDown() { video.volume = Math.max(0, video.volume - 0.1); }
     function tMute() { video.muted = !video.muted; }
     function toggleFS() { if (!document.fullscreenElement) video.requestFullscreen(); else document.exitFullscreen(); }
-    function saveSets() { localStorage.setItem('scrapingant_key', document.getElementById('apiKey').value); log("API Key salvata."); }
+    
+    function saveSets() { localStorage.setItem('scrapingant_key', document.getElementById('apiKey').value); log("Impostazioni salvate."); }
     function loadSets() { const k = localStorage.getItem('scrapingant_key'); if (k) document.getElementById('apiKey').value = k; }
 
     function tRec() {
