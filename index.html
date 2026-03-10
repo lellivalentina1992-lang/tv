@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TV ULTRA PRO v2026 - App Universale</title>
+    <title>TV ULTRA PRO v2026 - Ultra Resiliente</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -37,7 +37,6 @@
             text-transform: uppercase;
         }
 
-        /* Barra di Stato Ottimizzata per Accessibilità */
         .status-bar {
             background: #252525;
             padding: 15px;
@@ -73,7 +72,6 @@
 
         .section-header h2 { font-size: 1.3em; color: #4361ee; }
 
-        /* Telecomando a Pulsanti Grandi per Mobile */
         .remote-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -87,17 +85,16 @@
             border: 2px solid #444;
             color: white;
             border-radius: 15px;
-            font-size: 1em;
+            font-size: 1.1em;
             font-weight: bold;
             cursor: pointer;
-            transition: transform 0.1s, background 0.2s;
+            transition: transform 0.1s;
             text-align: center;
         }
 
         .channel-btn:active { transform: scale(0.95); background: #4361ee; }
         .channel-btn:focus { outline: 3px solid #fff; background: #4361ee; }
 
-        /* Video Player Resiliente */
         .video-box {
             width: 100%;
             background: #000;
@@ -126,12 +123,10 @@
             color: white;
             border-radius: 12px;
             font-weight: bold;
-            font-size: 0.9em;
         }
 
         .btn.sec { background: #444; }
 
-        /* Debug e Ricerca */
         .debug-console {
             margin-top: 25px;
             background: #000;
@@ -162,7 +157,7 @@
     <h1>TV ULTRA PRO v2026</h1>
 
     <div class="status-bar" id="mainStatus" role="status" aria-live="polite">
-        Caricamento canali universale...
+        Sincronizzazione canali...
     </div>
 
     <div class="progress-container">
@@ -173,7 +168,7 @@
         <h2>Canali Nazionali</h2>
     </section>
 
-    <nav class="remote-grid" aria-label="Telecomando">
+    <nav class="remote-grid" aria-label="Telecomando nazionale">
         <button class="channel-btn" onclick="playLCN('Rai 1')" aria-label="1, Rai 1">1, Rai 1</button>
         <button class="channel-btn" onclick="playLCN('Rai 2')" aria-label="2, Rai 2">2, Rai 2</button>
         <button class="channel-btn" onclick="playLCN('Rai 3')" aria-label="3, Rai 3">3, Rai 3</button>
@@ -191,12 +186,24 @@
         <button class="channel-btn" onclick="playLCN('Real Time')" aria-label="31, Real Time">31, Real Time</button>
     </nav>
 
+    <section class="section-header">
+        <h2>Canali Sportivi</h2>
+    </section>
+
+    <nav class="remote-grid" aria-label="Telecomando sport">
+        <button class="channel-btn" onclick="playLCN('Rai Sport')" aria-label="57, Rai Sport">57, Rai Sport</button>
+        <button class="channel-btn" onclick="playLCN('Sportitalia')" aria-label="60, Sportitalia">60, Sportitalia</button>
+        <button class="channel-btn" onclick="playLCN('SuperTennis')" aria-label="64, SuperTennis">64, SuperTennis</button>
+        <button class="channel-btn" onclick="playLCN('Eurosport')" aria-label="Eurosport">Eurosport</button>
+        <button class="channel-btn" onclick="playLCN('Sky Sport 24')" aria-label="Sky Sport 24">Sky Sport 24</button>
+    </nav>
+
     <div class="video-box">
         <video id="player" controls playsinline aria-label="Schermo TV"></video>
     </div>
 
     <div class="controls-row">
-        <button class="btn" onclick="toggleFS()">Tutto Schermo</button>
+        <button class="btn" onclick="toggleFS()">Schermo Intero</button>
         <button class="btn" onclick="vUp()">Volume +</button>
         <button class="btn" onclick="vDown()">Volume -</button>
         <button class="btn sec" onclick="tMute()">Muto (M)</button>
@@ -206,7 +213,7 @@
 
     <div class="search-area">
         <div class="input-group">
-            <input type="text" id="sIn" placeholder="Cerca tra tutti i canali..." aria-label="Inserisci nome canale">
+            <input type="text" id="sIn" placeholder="Cerca canale..." aria-label="Inserisci nome canale">
             <button class="btn" style="min-width: 80px;" onclick="doSearch()">Vai</button>
             <button class="btn sec" onclick="initDB()">Aggiorna</button>
         </div>
@@ -214,7 +221,7 @@
     </div>
 
     <div class="debug-console" id="debugLog" role="log" aria-live="polite">
-        [Sistema] Pronto per Android, iOS e Windows.
+        [Sistema] Log attivo.
     </div>
 
     <div class="settings-section">
@@ -228,7 +235,6 @@
 <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
 
 <script>
-    // Configurazione integrale delle 18 fonti
     const M3U_SOURCES = [
         { name: 'RAI Collection', url: 'https://pastebin.com/raw/9vF0SRsy' },
         { name: 'Mediaset Premium', url: 'https://pastebin.com/raw/3ZDX8Tjt' },
@@ -275,13 +281,13 @@
         mainStatus.className = isWarning ? 'status-bar warning' : 'status-bar';
     }
 
-    // CARICAMENTO IBRIDO: Ottimizzato per Android/iOS e Windows
+    // NUOVA FUNZIONE DI FETCH RESILIENTE CON BROWSER MODE
     async function fetchWithCORS(url, listName, attempt = 0) {
         const apiKey = document.getElementById('apiKey').value.trim();
         const cacheBuster = (url.includes('?') ? '&' : '?') + 't=' + Date.now();
         const finalUrl = url + cacheBuster;
 
-        // 1. Tentativo DIRETTO (Funziona se hai estensione su Windows)
+        // 1. Tentativo DIRETTO (Ok per GitHub se estensione attiva)
         if (attempt === 0) {
             try {
                 const res = await fetch(finalUrl);
@@ -296,14 +302,14 @@
             return await fetchWithCORS(url, listName, 1);
         }
 
-        // 2. Tentativo Proxy Gratuito (Timeout 15s come richiesto)
+        // 2. Tentativo Proxy Gratuito (15 secondi di timeout)
         const proxies = [
             'https://api.allorigins.win/raw?url=',
             'https://corsproxy.io/?'
         ];
 
         if (attempt <= proxies.length) {
-            log(`Tentativo Proxy ${attempt} per ${listName} (15s)...`);
+            log(`Tentativo Proxy ${attempt} per ${listName}...`);
             try {
                 const controller = new AbortController();
                 const tid = setTimeout(() => controller.abort(), 15000);
@@ -317,17 +323,29 @@
             return await fetchWithCORS(url, listName, attempt + 1);
         }
 
-        // 3. Salvataggio finale con ScrapingAnt (Essenziale per Mobile)
+        // 3. Salvataggio finale con ScrapingAnt in BROWSER MODE
         if (apiKey) {
-            log(`Uso ScrapingAnt per ${listName}...`);
+            log(`Uso ScrapingAnt BROWSER per ${listName}...`);
             try {
-                const saUrl = `https://api.scrapingant.com/v2/general?url=${encodeURIComponent(finalUrl)}&x-api-key=${apiKey}`;
-                const res = await fetch(saUrl);
+                // Per Pastebin usiamo browser:true per passare il controllo anti-bot
+                const saUrl = `https://api.scrapingant.com/v2/general`;
+                const res = await fetch(saUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+                    body: JSON.stringify({
+                        url: finalUrl,
+                        browser: true, // Attiva il browser reale per sbloccare Pastebin
+                        proxy_type: 'datacenter'
+                    })
+                });
                 if (res.ok) {
                     const json = await res.json();
-                    if (json.content) return json.content;
+                    if (json.content) {
+                        log(`Caricata via ScrapingAnt (Browser): ${listName}`);
+                        return json.content;
+                    }
                 }
-            } catch (e) {}
+            } catch (e) { log(`Errore ScrapingAnt per ${listName}`, true); }
         }
         throw new Error("Fallito");
     }
@@ -347,9 +365,9 @@
                     updateGroups();
                     setStatus(`Caricate ${loaded} liste su 18...`);
                 }
-            } catch (e) { log(`Sorgente non disponibile: ${src.name}`, true); }
+            } catch (e) { log(`Sorgente saltata: ${src.name}`, true); }
         }
-        setStatus(`Pronto. ${Object.keys(grouped).length} canali trovati.`);
+        setStatus(`Database pronto. ${Object.keys(grouped).length} canali trovati.`);
     }
 
     function parseM3U(data, srcName) {
@@ -426,7 +444,6 @@
         res.innerHTML = '';
         Object.values(grouped).filter(ch => ch.name.toLowerCase().includes(q)).forEach(m => {
             const d = document.createElement('div');
-            d.className = 'list-item';
             d.style.cssText = "padding:15px; background:#2a2a2a; margin-top:8px; border-radius:10px; cursor:pointer; border-left:4px solid #4361ee;";
             d.textContent = m.name;
             d.onclick = () => playLCN(m.name);
@@ -439,7 +456,7 @@
     function tMute() { video.muted = !video.muted; }
     function toggleFS() { 
         if (video.requestFullscreen) video.requestFullscreen();
-        else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen(); // Per iPhone
+        else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen();
     }
     
     function saveSets() { localStorage.setItem('scrapingant_key', document.getElementById('apiKey').value); log("Impostazioni salvate."); }
@@ -450,7 +467,7 @@
         if (!rec || rec.state === 'inactive') {
             chunks = [];
             const str = video.captureStream ? video.captureStream() : video.mozCaptureStream();
-            if (!str) { log("Registrazione non supportata su questo browser.", true); return; }
+            if (!str) { log("Registrazione non supportata.", true); return; }
             rec = new MediaRecorder(str, { mimeType: 'video/webm' });
             rec.ondataavailable = e => chunks.push(e.data);
             rec.onstop = () => {
