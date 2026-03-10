@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TV ULTRA PRO v2026 - LCN & Sport</title>
+    <title>TV ULTRA PRO v2026 - LCN & Sport Completo</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -173,7 +173,7 @@
     <h1>TV ULTRA PRO v2026</h1>
 
     <div class="status-bar" id="mainStatus" role="status" aria-live="polite">
-        Inizializzazione sistema...
+        Sistema pronto. In attesa di selezione...
     </div>
 
     <div class="progress-container">
@@ -302,16 +302,13 @@
 
     async function fetchWithCORS(url, listName, attempt = 1) {
         const apiKey = localStorage.getItem('scrapingant_key');
-        
-        // Anti-Cache String
         const cacheBuster = (url.includes('?') ? '&' : '?') + 't=' + Date.now();
         const finalUrl = url + cacheBuster;
 
         const proxies = [
             'https://api.codetabs.com/v1/proxy?quest=',
             'https://api.allorigins.win/raw?url=',
-            'https://corsproxy.io/?',
-            'https://thingproxy.freeboard.io/fetch/'
+            'https://corsproxy.io/?'
         ];
 
         if (apiKey && attempt === 1) {
@@ -321,13 +318,13 @@
                     body: JSON.stringify({url: finalUrl, browser: false})
                 });
                 if (res.ok) return await res.text();
-            } catch (e) { log(`API ScrapingAnt Fallita...`, true); }
+            } catch (e) { log(`API ScrapingAnt Fallita per ${listName}`, true); }
         }
 
         const proxyUrl = proxies[(attempt - 1) % proxies.length] + encodeURIComponent(finalUrl);
         try {
             const controller = new AbortController();
-            const tid = setTimeout(() => controller.abort(), 15000); // Alzato a 15s per Pastebin
+            const tid = setTimeout(() => controller.abort(), 15000);
             const res = await fetch(proxyUrl, { signal: controller.signal });
             clearTimeout(tid);
             if (res.ok) {
@@ -337,14 +334,14 @@
         } catch (e) {
             if (attempt < proxies.length) return await fetchWithCORS(url, listName, attempt + 1);
         }
-        throw new Error("Errore critico");
+        throw new Error("Errore");
     }
 
     async function initDB() {
-        setStatus("Caricamento dinamico a scaglioni (Anti-Blocco)...", true);
+        setStatus("Caricamento liste in corso...", true);
         db = [];
         let loaded = 0;
-        const batchSize = 2; // Ridotto a 2 per evitare rate-limit dai proxy
+        const batchSize = 2;
 
         for (let i = 0; i < M3U_SOURCES.length; i += batchSize) {
             const batch = M3U_SOURCES.slice(i, i + batchSize);
@@ -355,10 +352,10 @@
                     loaded++;
                     pBar.style.width = Math.round((loaded / M3U_SOURCES.length) * 100) + '%';
                     updateGroups();
-                } catch (e) { log(`Saltata definitivamente: ${src.name}`, true); }
+                } catch (e) { log(`Saltata: ${src.name}`, true); }
             });
             await Promise.allSettled(promises);
-            await new Promise(r => setTimeout(r, 1000)); // Pausa 1s tra lotti
+            await new Promise(r => setTimeout(r, 800));
         }
         setStatus(`Database pronto. ${Object.keys(grouped).length} canali trovati.`);
     }
@@ -394,36 +391,64 @@
         if (!entry) { setStatus(`Canale ${name} non trovato.`, true); return; }
 
         setStatus(`Connessione a ${name}...`);
+        // Prova tutte le fonti disponibili per quel canale
         for (let l of entry.links) {
             try {
+                log(`Tentativo su ${name} da fonte: ${l.src}`);
                 await startStream(l.url);
                 setStatus(`In onda: ${name}`);
                 return;
-            } catch (e) { log(`Fonte fallita per ${name}`, true); }
+            } catch (e) { 
+                log(`Fonte ${l.src} fallita per ${name}`, true); 
+            }
         }
-        setStatus(`Nessuna fonte funzionante.`, true);
+        setStatus(`Nessuna fonte funzionante per ${name}.`, true);
     }
 
     function startStream(url) {
         return new Promise((resolve, reject) => {
-            video.pause(); video.removeAttribute('src'); video.load();
+            // Pulizia totale prima di ogni tentativo
+            video.pause();
+            video.removeAttribute('src');
+            video.load();
             if (hls) { hls.destroy(); hls = null; }
             if (dash) { dash.reset(); dash = null; }
 
-            const timeout = setTimeout(() => reject(), 12000);
+            const timeout = setTimeout(() => reject("Timeout"), 15000);
 
             if (url.includes('.m3u8')) {
                 if (Hls.isSupported()) {
-                    hls = new Hls({ manifestLoadingTimeOut: 6000 });
-                    hls.loadSource(url); hls.attachMedia(video);
-                    hls.on(Hls.Events.MANIFEST_PARSED, () => { clearTimeout(timeout); video.play(); resolve(); });
-                    hls.on(Hls.Events.ERROR, (e, d) => { if (d.fatal) reject(); });
-                } else { video.src = url; video.play().then(() => { clearTimeout(timeout); resolve(); }).catch(reject); }
+                    // Configurazione HLS resiliente
+                    hls = new Hls({
+                        manifestLoadingTimeOut: 10000,
+                        manifestLoadingMaxRetry: 2,
+                        xhrSetup: function(xhr) {
+                            xhr.withCredentials = false; // Spesso risolve blocchi CORS su segmenti
+                        }
+                    });
+                    hls.loadSource(url);
+                    hls.attachMedia(video);
+                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                        clearTimeout(timeout);
+                        video.play().then(resolve).catch(reject);
+                    });
+                    hls.on(Hls.Events.ERROR, (e, data) => {
+                        if (data.fatal) {
+                            clearTimeout(timeout);
+                            reject("HLS Fatal Error");
+                        }
+                    });
+                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                    video.src = url;
+                    video.play().then(() => { clearTimeout(timeout); resolve(); }).catch(reject);
+                }
             } else if (url.includes('.mpd')) {
-                dash = dashjs.MediaPlayer().create(); dash.initialize(video, url, true);
+                dash = dashjs.MediaPlayer().create();
+                dash.initialize(video, url, true);
                 video.onplaying = () => { clearTimeout(timeout); resolve(); };
             } else {
-                video.src = url; video.play().then(() => { clearTimeout(timeout); resolve(); }).catch(reject);
+                video.src = url;
+                video.play().then(() => { clearTimeout(timeout); resolve(); }).catch(reject);
             }
         });
     }
