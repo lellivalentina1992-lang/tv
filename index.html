@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TV ULTRA PRO v2026 - Debug & Fix</title>
+    <title>TV ULTRA PRO v2026 - LCN Accessibile</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -70,19 +70,17 @@
             border: 2px solid #444;
             color: white;
             border-radius: 15px;
-            font-size: 1em;
+            font-size: 1.1em;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.2s ease;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            text-align: center;
         }
 
         .channel-btn:hover, .channel-btn:focus {
             background: #4361ee;
             border-color: #fff;
-            outline: none;
+            outline: 3px solid #fff;
             transform: translateY(-5px);
         }
 
@@ -119,23 +117,6 @@
 
         .btn.sec { background: #444; }
 
-        .search-area {
-            margin-top: 40px;
-            padding-top: 25px;
-            border-top: 2px solid #333;
-        }
-
-        .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
-
-        input[type="text"] {
-            flex: 1;
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #444;
-            background: #2a2a2a;
-            color: white;
-        }
-
         .debug-console {
             margin-top: 30px;
             background: #000;
@@ -164,6 +145,26 @@
             width: 0%;
             transition: width 0.3s ease;
         }
+
+        .recording-timer {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background: #dc3545;
+            color: white;
+            border-radius: 25px;
+            font-weight: bold;
+        }
+
+        .recording-timer.active { display: flex; }
+
+        .settings-section {
+            margin-top: 30px;
+            background: #252525;
+            padding: 20px;
+            border-radius: 15px;
+        }
     </style>
 </head>
 <body>
@@ -180,20 +181,26 @@
     </div>
 
     <section class="section-header">
-        <h2>Telecomando Rapido</h2>
+        <h2>Elenco Canali Nazionali</h2>
     </section>
 
-    <nav class="remote-grid">
-        <button class="channel-btn" onclick="playLCN('Rai 1')" aria-label="Canale 1, Rai 1">1. Rai 1</button>
-        <button class="channel-btn" onclick="playLCN('Rai 2')" aria-label="Canale 2, Rai 2">2. Rai 2</button>
-        <button class="channel-btn" onclick="playLCN('Rai 3')" aria-label="Canale 3, Rai 3">3. Rai 3</button>
-        <button class="channel-btn" onclick="playLCN('Rete 4')" aria-label="Canale 4, Rete 4">4. Rete 4</button>
-        <button class="channel-btn" onclick="playLCN('Canale 5')" aria-label="Canale 5, Canale 5">5. Canale 5</button>
-        <button class="channel-btn" onclick="playLCN('Italia 1')" aria-label="Canale 6, Italia 1">6. Italia 1</button>
-        <button class="channel-btn" onclick="playLCN('La7')" aria-label="Canale 7, La 7">7. La7</button>
-        <button class="channel-btn" onclick="playLCN('TV8')" aria-label="Canale 8, TV 8">8. TV8</button>
-        <button class="channel-btn" onclick="playLCN('Nove')" aria-label="Canale 9, Nove">9. Nove</button>
-        <button class="channel-btn" onclick="playLCN('20 Mediaset')" aria-label="Canale 20, 20 Mediaset">20. 20</button>
+    <nav class="remote-grid" aria-label="Telecomando nazionale">
+        <button class="channel-btn" onclick="playLCN('Rai 1')" aria-label="1, Rai 1">1, Rai 1</button>
+        <button class="channel-btn" onclick="playLCN('Rai 2')" aria-label="2, Rai 2">2, Rai 2</button>
+        <button class="channel-btn" onclick="playLCN('Rai 3')" aria-label="3, Rai 3">3, Rai 3</button>
+        <button class="channel-btn" onclick="playLCN('Rete 4')" aria-label="4, Rete 4">4, Rete 4</button>
+        <button class="channel-btn" onclick="playLCN('Canale 5')" aria-label="5, Canale 5">5, Canale 5</button>
+        <button class="channel-btn" onclick="playLCN('Italia 1')" aria-label="6, Italia 1">6, Italia 1</button>
+        <button class="channel-btn" onclick="playLCN('La7')" aria-label="7, La 7">7, La 7</button>
+        <button class="channel-btn" onclick="playLCN('TV8')" aria-label="8, TV 8">8, TV 8</button>
+        <button class="channel-btn" onclick="playLCN('Nove')" aria-label="9, Nove">9, Nove</button>
+        
+        <button class="channel-btn" onclick="playLCN('20 Mediaset')" aria-label="20, 20 Mediaset">20, 20</button>
+        <button class="channel-btn" onclick="playLCN('Rai 4')" aria-label="21, Rai 4">21, Rai 4</button>
+        <button class="channel-btn" onclick="playLCN('Iris')" aria-label="22, Iris">22, Iris</button>
+        <button class="channel-btn" onclick="playLCN('Rai Movie')" aria-label="24, Rai Movie">24, Rai Movie</button>
+        <button class="channel-btn" onclick="playLCN('La5')" aria-label="30, La 5">30, La 5</button>
+        <button class="channel-btn" onclick="playLCN('Real Time')" aria-label="31, Real Time">31, Real Time</button>
     </nav>
 
     <div class="video-box">
@@ -206,13 +213,16 @@
         <button class="btn" onclick="vDown()">Volume -</button>
         <button class="btn sec" onclick="tMute()">Muto (M)</button>
         <button class="btn sec" id="recBtn" onclick="tRec()">Registra</button>
+        <div class="recording-timer" id="recordingTimer" aria-live="polite">
+            <span>REC</span> <span id="timerDisplay">00:00</span>
+        </div>
     </div>
 
     <div class="search-area">
         <div class="input-group">
-            <input type="text" id="sIn" placeholder="Cerca altro canale..." aria-label="Cerca">
+            <input type="text" id="sIn" placeholder="Cerca canale..." aria-label="Inserisci nome canale per cercare">
             <button class="btn" style="min-width: 80px;" onclick="doSearch()">Vai</button>
-            <button class="btn sec" onclick="initDB()">Ricarica Liste</button>
+            <button class="btn sec" onclick="initDB()">Forza Ricarica Liste</button>
         </div>
         <div id="res" role="list"></div>
     </div>
@@ -221,10 +231,11 @@
         [Sistema] Log di attività pronto.
     </div>
 
-    <div class="settings-section" style="margin-top:20px; background:#252525; padding:15px; border-radius:10px;">
+    <div class="settings-section">
         <h3>Impostazioni Avanzate</h3>
-        <input type="text" id="apiKey" placeholder="ScrapingAnt API Key" style="width:100%; margin:10px 0; padding:10px; border-radius:5px; border:none; background:#333; color:white;">
+        <input type="password" id="apiKey" placeholder="ScrapingAnt API Key" style="width:100%; margin:10px 0; padding:10px; border-radius:5px; border:none; background:#333; color:white;">
         <button class="btn sec" onclick="saveSets()">Salva API Key</button>
+        <button class="btn sec" onclick="loadSets()">Carica API Key</button>
     </div>
 </div>
 
@@ -232,24 +243,25 @@
 <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
 
 <script>
+    // Tutte le 18 sorgenti originali caricate a ondate
     const M3U_SOURCES = [
+        { name: 'RAI Collection', url: 'https://pastebin.com/raw/9vF0SRsy' },
+        { name: 'Mediaset Premium', url: 'https://pastebin.com/raw/3ZDX8Tjt' },
         { name: 'IPTV-Org Italia', url: 'https://iptv-org.github.io/iptv/countries/it.m3u' },
         { name: 'TV Italia Fulgione', url: 'https://raw.githubusercontent.com/Fulgione89/iptv/main/italia.m3u' },
         { name: 'Tivu.m3u Fulgione', url: 'https://raw.githubusercontent.com/Fulgione89/iptv/main/tivu.m3u' },
         { name: 'Free TV Klauss', url: 'https://raw.githubusercontent.com/killawtho/Free-TV/master/iptv.m3u' },
+        { name: 'Tundrak TV', url: 'https://raw.githubusercontent.com/tundrak/IPTV-Italia/main/iptvitacompiled.m3u' },
+        { name: 'Regionali Italia', url: 'https://pastebin.com/raw/V5k7u3wU' },
         { name: 'FreeTVlist', url: 'https://raw.githubusercontent.com/Free-TV/IPTV/master/playlists/playlist_italy.m3u8' },
         { name: 'World IPTV', url: 'https://raw.githubusercontent.com/mitthu786/tvepg/main/Italy.m3u' },
         { name: 'In The Mix', url: 'https://raw.githubusercontent.com/inthemix22/inthemix/main/iptv.m3u' },
-        { name: 'Tundrak TV', url: 'https://raw.githubusercontent.com/tundrak/IPTV-Italia/main/iptvitacompiled.m3u' },
         { name: 'FreeIPTV Sammyboi', url: 'https://raw.githubusercontent.com/sammyboi1801/FreeIPTV/main/iptv.m3u' },
         { name: 'TivuStream', url: 'https://raw.githubusercontent.com/Paradise-91/ParaTV/main/streams/it.m3u' },
         { name: 'Lista Personale', url: 'https://raw.githubusercontent.com/notanewbie/LDN/main/italy.m3u' },
         { name: 'Italia Reloaded', url: 'https://pastebin.com/raw/qpbLKZuj' },
         { name: 'Italia Mix', url: 'https://pastebin.com/raw/iZWVJoWy' },
-        { name: 'RAI Collection', url: 'https://pastebin.com/raw/9vF0SRsy' },
-        { name: 'Mediaset Premium', url: 'https://pastebin.com/raw/3ZDX8Tjt' },
         { name: 'Sport Italia', url: 'https://pastebin.com/raw/HiQXAwUv' },
-        { name: 'Regionali Italia', url: 'https://pastebin.com/raw/V5k7u3wU' },
         { name: 'News Italia 24 7', url: 'https://pastebin.com/raw/7wZbMxkL' }
     ];
 
@@ -259,9 +271,11 @@
     let dash = null;
     let rec = null;
     let chunks = [];
+    let recordingInterval = null;
     const video = document.getElementById('player');
     const mainStatus = document.getElementById('mainStatus');
     const debugConsole = document.getElementById('debugLog');
+    const pBar = document.getElementById('pBar');
 
     function log(msg, isError = false) {
         const entry = document.createElement('div');
@@ -276,66 +290,61 @@
         mainStatus.className = isWarning ? 'status-bar warning' : 'status-bar';
     }
 
-    async function fetchWithCORS(url, listName) {
+    async function fetchWithCORS(url, listName, attempt = 1) {
         const apiKey = localStorage.getItem('scrapingant_key');
-        
-        // 1. ScrapingAnt (se presente)
-        if (apiKey) {
+        const proxies = [
+            'https://api.allorigins.win/raw?url=',
+            'https://corsproxy.io/?',
+            'https://thingproxy.freeboard.io/fetch/'
+        ];
+
+        if (apiKey && attempt === 1) {
             try {
                 const res = await fetch('https://api.scrapingant.com/v2/general', {
                     method: 'POST', headers: {'x-api-key': apiKey, 'Content-Type': 'application/json'},
                     body: JSON.stringify({url: url, browser: false})
                 });
                 if (res.ok) return await res.text();
-            } catch (e) { log(`ScrapingAnt fallito per ${listName}`, true); }
+            } catch (e) { log(`API Fallita, provo proxy...`, true); }
         }
 
-        // 2. Rotazione Proxy potenziata
-        const proxies = [
-            'https://api.allorigins.win/raw?url=',
-            'https://corsproxy.io/?',
-            'https://thingproxy.freeboard.io/fetch/',
-            'https://proxy.cors.sh/'
-        ];
-
-        for (let p of proxies) {
-            try {
-                const controller = new AbortController();
-                const tid = setTimeout(() => controller.abort(), 8000);
-                const res = await fetch(p + encodeURIComponent(url), { signal: controller.signal });
-                clearTimeout(tid);
-                if (res.ok) {
-                    log(`Caricata: ${listName} via ${p.split('/')[2]}`);
-                    return await res.text();
-                }
-            } catch (e) { continue; }
+        const proxyUrl = proxies[(attempt - 1) % proxies.length] + encodeURIComponent(url);
+        try {
+            const controller = new AbortController();
+            const tid = setTimeout(() => controller.abort(), 12000);
+            const res = await fetch(proxyUrl, { signal: controller.signal });
+            clearTimeout(tid);
+            if (res.ok) {
+                log(`Caricata: ${listName}`);
+                return await res.text();
+            }
+        } catch (e) {
+            if (attempt < 2) return await fetchWithCORS(url, listName, attempt + 1);
         }
-        throw new Error("Tutti i proxy hanno fallito");
+        throw new Error("Errore");
     }
 
     async function initDB() {
-        setStatus("ATTENZIONE: Caricamento 18 liste in corso. Non aggiornare.", true);
+        setStatus("Caricamento liste in corso (3 alla volta)...", true);
         db = [];
         let loaded = 0;
-        const pBar = document.getElementById('pBar');
+        const batchSize = 3;
 
-        // Caricamento in PARALLELO
-        const promises = M3U_SOURCES.map(async (src) => {
-            try {
-                const text = await fetchWithCORS(src.url, src.name);
-                parse(text, src.name);
-                loaded++;
-                const p = Math.round((loaded / M3U_SOURCES.length) * 100);
-                pBar.style.width = p + '%';
-                // Aggiorna database in tempo reale
-                updateGroups();
-            } catch (e) {
-                log(`ERRORE: ${src.name} saltata per timeout proxy.`, true);
-            }
-        });
-
-        await Promise.allSettled(promises);
-        setStatus(`Database pronto. ${Object.keys(grouped).length} canali unici trovati.`);
+        for (let i = 0; i < M3U_SOURCES.length; i += batchSize) {
+            const batch = M3U_SOURCES.slice(i, i + batchSize);
+            const promises = batch.map(async (src) => {
+                try {
+                    const text = await fetchWithCORS(src.url, src.name);
+                    parse(text, src.name);
+                    loaded++;
+                    pBar.style.width = Math.round((loaded / M3U_SOURCES.length) * 100) + '%';
+                    updateGroups();
+                } catch (e) { log(`Saltata: ${src.name}`, true); }
+            });
+            await Promise.allSettled(promises);
+            await new Promise(r => setTimeout(r, 600));
+        }
+        setStatus(`Database pronto. ${Object.keys(grouped).length} canali trovati.`);
     }
 
     function parse(data, srcName) {
@@ -366,17 +375,17 @@
     async function playLCN(name) {
         const k = name.toLowerCase().replace(/[^a-z0-9]/g, '');
         const entry = grouped[k];
-        if (!entry) { setStatus(`Canale ${name} non trovato nelle liste caricate.`, true); return; }
+        if (!entry) { setStatus(`Canale ${name} non ancora caricato.`, true); return; }
 
         setStatus(`Connessione a ${name}...`);
         for (let l of entry.links) {
             try {
                 await startStream(l.url);
-                setStatus(`In onda: ${name} (Fonte: ${l.src})`);
+                setStatus(`In onda: ${name}`);
                 return;
-            } catch (e) { log(`Fonte ${l.src} fallita.`, true); }
+            } catch (e) { log(`Fonte fallita per ${name}`, true); }
         }
-        setStatus(`Nessuna fonte funzionante per ${name}`, true);
+        setStatus(`Nessuna fonte funzionante.`, true);
     }
 
     function startStream(url) {
@@ -420,10 +429,12 @@
     function vDown() { video.volume = Math.max(0, video.volume - 0.1); }
     function tMute() { video.muted = !video.muted; }
     function toggleFS() { if (!document.fullscreenElement) video.requestFullscreen(); else document.exitFullscreen(); }
-    function saveSets() { localStorage.setItem('scrapingant_key', document.getElementById('apiKey').value); log("API Key salvata."); }
+    
+    function saveSets() { localStorage.setItem('scrapingant_key', document.getElementById('apiKey').value); log("Impostazioni salvate."); }
+    function loadSets() { const k = localStorage.getItem('scrapingant_key'); if (k) document.getElementById('apiKey').value = k; }
 
     function tRec() {
-        const btn = document.getElementById('recBtn');
+        const btn = document.getElementById('recBtn'), timer = document.getElementById('recordingTimer');
         if (!rec || rec.state === 'inactive') {
             chunks = [];
             const str = video.captureStream ? video.captureStream() : video.mozCaptureStream();
@@ -434,11 +445,17 @@
                 const a = document.createElement('a'); a.href = URL.createObjectURL(bl);
                 a.download = `TV_REC_${Date.now()}.webm`; a.click();
             };
-            rec.start(); btn.textContent = "STOP"; btn.style.background = "#e74c3c";
-        } else { rec.stop(); btn.textContent = "Registra"; btn.style.background = "#4361ee"; }
+            rec.start(); btn.textContent = "STOP"; timer.classList.add('active');
+            let sec = 0;
+            recordingInterval = setInterval(() => {
+                sec++;
+                const m = Math.floor(sec/60).toString().padStart(2,'0'), s = (sec%60).toString().padStart(2,'0');
+                document.getElementById('timerDisplay').textContent = `${m}:${s}`;
+            }, 1000);
+        } else { rec.stop(); btn.textContent = "Registra"; timer.classList.remove('active'); clearInterval(recordingInterval); }
     }
 
-    window.onload = initDB;
+    window.onload = function() { loadSets(); initDB(); };
 </script>
 </body>
 </html>
