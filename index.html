@@ -2,17 +2,22 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TV ULTRA PRO v2026 - Versione Integrale</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TV ULTRA PRO v2026 - App Universale</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TV ULTRA">
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22TV%20ULTRA%20PRO%22,%22short_name%22:%22TVULTRA%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22#121212%22,%22theme_color%22:%22#4361ee%22}">
+
     <style>
-        /* STILE GENERALE */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: #121212;
             color: #ffffff;
             line-height: 1.6;
-            padding: 15px;
+            padding: env(safe-area-inset-top) 15px env(safe-area-inset-bottom) 15px;
         }
 
         .container {
@@ -20,219 +25,134 @@
             margin: 0 auto;
             background: #1e1e1e;
             border-radius: 20px;
-            padding: 25px;
+            padding: 20px;
             box-shadow: 0 15px 40px rgba(0,0,0,0.6);
         }
 
         h1 {
             text-align: center;
             color: #4361ee;
-            font-size: 2.2em;
-            margin-bottom: 20px;
+            font-size: 1.8em;
+            margin-bottom: 15px;
             text-transform: uppercase;
-            letter-spacing: 2px;
         }
 
-        /* BARRA DI STATO E PROGRESSO */
+        /* Barra di Stato Ottimizzata per Accessibilità */
         .status-bar {
             background: #252525;
             padding: 15px;
-            border-radius: 10px;
+            border-radius: 12px;
             margin-bottom: 20px;
             text-align: center;
             font-weight: bold;
             color: #2ecc71;
             border: 2px solid #333;
-            font-size: 1.1em;
-            min-height: 65px;
+            min-height: 70px;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 1.1em;
         }
 
         .status-bar.warning { color: #f1c40f; border-color: #f1c40f; }
 
         .progress-container {
-            width: 100%;
-            height: 12px;
-            background: #333;
-            border-radius: 6px;
-            margin-bottom: 25px;
-            overflow: hidden;
-            border: 1px solid #444;
+            width: 100%; height: 8px; background: #333; border-radius: 4px; margin-bottom: 20px; overflow: hidden;
         }
 
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #4361ee, #2ecc71);
-            width: 0%;
-            transition: width 0.4s ease;
-        }
+        .progress-bar { height: 100%; background: #4361ee; width: 0%; transition: width 0.4s ease; }
 
-        /* INTESTAZIONI SEZIONI */
         .section-header {
             background: #2a2a2a;
-            padding: 15px;
+            padding: 12px;
             border-radius: 10px;
-            margin-top: 25px;
+            margin-top: 20px;
             margin-bottom: 15px;
             border-left: 6px solid #4361ee;
         }
 
-        .section-header h2 { font-size: 1.4em; color: #4361ee; }
+        .section-header h2 { font-size: 1.3em; color: #4361ee; }
 
-        /* GRIGLIA PULSANTI TELECOMANDO */
+        /* Telecomando a Pulsanti Grandi per Mobile */
         .remote-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
             margin-bottom: 20px;
         }
 
         .channel-btn {
-            padding: 20px 10px;
+            padding: 18px 5px;
             background: #333;
             border: 2px solid #444;
             color: white;
             border-radius: 15px;
-            font-size: 1.1em;
+            font-size: 1em;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: transform 0.1s, background 0.2s;
             text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
 
-        .channel-btn:hover, .channel-btn:focus {
-            background: #4361ee;
-            border-color: #fff;
-            outline: 3px solid #fff;
-            transform: translateY(-5px);
-            box-shadow: 0 6px 12px rgba(67, 97, 238, 0.4);
-        }
+        .channel-btn:active { transform: scale(0.95); background: #4361ee; }
+        .channel-btn:focus { outline: 3px solid #fff; background: #4361ee; }
 
-        /* PLAYER VIDEO */
+        /* Video Player Resiliente */
         .video-box {
             width: 100%;
             background: #000;
             border-radius: 15px;
             overflow: hidden;
-            margin-top: 30px;
-            margin-bottom: 20px;
+            margin-top: 20px;
             aspect-ratio: 16 / 9;
-            border: 2px solid #333;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
 
         video { width: 100%; height: 100%; display: block; }
 
-        /* CONTROLLI PLAYER */
         .controls-row {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 30px;
+            gap: 8px;
+            margin-top: 20px;
         }
 
         .btn {
             flex: 1;
-            min-width: 140px;
+            min-width: 120px;
             padding: 15px;
             background: #4361ee;
             border: none;
             color: white;
-            border-radius: 10px;
+            border-radius: 12px;
             font-weight: bold;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background 0.3s;
+            font-size: 0.9em;
         }
 
-        .btn:hover { background: #3f37c9; }
         .btn.sec { background: #444; }
-        .btn.sec:hover { background: #555; }
 
-        /* REGISTRAZIONE */
-        .recording-timer {
-            display: none;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 20px;
-            background: #dc3545;
-            color: white;
-            border-radius: 25px;
-            font-weight: bold;
-            animation: blink 1s infinite;
-        }
-
-        @keyframes blink { 50% { opacity: 0.6; } }
-        .recording-timer.active { display: flex; }
-
-        /* RICERCA E RISULTATI */
-        .search-area {
-            margin-top: 40px;
-            padding-top: 25px;
-            border-top: 2px solid #333;
-        }
-
-        .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
-
-        input[type="text"], input[type="password"] {
-            flex: 1;
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #444;
-            background: #2a2a2a;
-            color: white;
-            font-size: 1em;
-        }
-
-        .results-scroll {
-            max-height: 350px;
-            overflow-y: auto;
-            display: grid;
-            gap: 10px;
-            background: #1a1a1a;
-            padding: 10px;
-            border-radius: 10px;
-            border: 1px solid #333;
-        }
-
-        .list-item {
-            padding: 15px;
-            background: #2a2a2a;
-            border-radius: 8px;
-            cursor: pointer;
-            border-left: 4px solid #4361ee;
-            transition: background 0.2s;
-        }
-
-        .list-item:hover { background: #333; }
-
-        /* CONSOLE DEBUG */
+        /* Debug e Ricerca */
         .debug-console {
-            margin-top: 30px;
+            margin-top: 25px;
             background: #000;
             color: #0f0;
-            font-family: 'Consolas', monospace;
-            padding: 15px;
+            font-family: monospace;
+            padding: 12px;
             border-radius: 10px;
-            font-size: 0.9em;
-            max-height: 250px;
+            font-size: 0.85em;
+            max-height: 200px;
             overflow-y: auto;
-            border: 1px solid #333;
         }
 
-        /* IMPOSTAZIONI */
-        .settings-section {
-            margin-top: 30px;
-            background: #252525;
-            padding: 20px;
-            border-radius: 15px;
-            border: 1px solid #333;
+        .recording-timer {
+            display: none; align-items: center; gap: 10px; padding: 10px 15px;
+            background: #dc3545; color: white; border-radius: 20px; font-weight: bold;
         }
+        .recording-timer.active { display: flex; }
 
         @media (max-width: 600px) {
-            .remote-grid { grid-template-columns: 1fr 1fr; }
+            .remote-grid { grid-template-columns: repeat(2, 1fr); }
+            h1 { font-size: 1.4em; }
         }
     </style>
 </head>
@@ -242,7 +162,7 @@
     <h1>TV ULTRA PRO v2026</h1>
 
     <div class="status-bar" id="mainStatus" role="status" aria-live="polite">
-        Inizializzazione sistema...
+        Caricamento canali universale...
     </div>
 
     <div class="progress-container">
@@ -250,10 +170,10 @@
     </div>
 
     <section class="section-header">
-        <h2>Elenco Canali Nazionali</h2>
+        <h2>Canali Nazionali</h2>
     </section>
 
-    <nav class="remote-grid" aria-label="Telecomando nazionale">
+    <nav class="remote-grid" aria-label="Telecomando">
         <button class="channel-btn" onclick="playLCN('Rai 1')" aria-label="1, Rai 1">1, Rai 1</button>
         <button class="channel-btn" onclick="playLCN('Rai 2')" aria-label="2, Rai 2">2, Rai 2</button>
         <button class="channel-btn" onclick="playLCN('Rai 3')" aria-label="3, Rai 3">3, Rai 3</button>
@@ -271,54 +191,36 @@
         <button class="channel-btn" onclick="playLCN('Real Time')" aria-label="31, Real Time">31, Real Time</button>
     </nav>
 
-    <section class="section-header">
-        <h2>Canali Sportivi</h2>
-    </section>
-
-    <nav class="remote-grid" aria-label="Telecomando sport">
-        <button class="channel-btn" onclick="playLCN('Rai Sport')" aria-label="57, Rai Sport">57, Rai Sport</button>
-        <button class="channel-btn" onclick="playLCN('Sportitalia')" aria-label="60, Sportitalia">60, Sportitalia</button>
-        <button class="channel-btn" onclick="playLCN('SuperTennis')" aria-label="64, SuperTennis">64, SuperTennis</button>
-        <button class="channel-btn" onclick="playLCN('Eurosport')" aria-label="Eurosport">Eurosport</button>
-        <button class="channel-btn" onclick="playLCN('Sky Sport 24')" aria-label="Sky Sport 24">Sky Sport 24</button>
-    </nav>
-
     <div class="video-box">
-        <video id="player" controls aria-label="Visualizzatore TV"></video>
+        <video id="player" controls playsinline aria-label="Schermo TV"></video>
     </div>
 
     <div class="controls-row">
-        <button class="btn" onclick="toggleFS()">Schermo Intero</button>
+        <button class="btn" onclick="toggleFS()">Tutto Schermo</button>
         <button class="btn" onclick="vUp()">Volume +</button>
         <button class="btn" onclick="vDown()">Volume -</button>
         <button class="btn sec" onclick="tMute()">Muto (M)</button>
         <button class="btn sec" id="recBtn" onclick="tRec()">Registra</button>
-        <div class="recording-timer" id="recordingTimer" aria-live="polite">
-            <span>REC</span> <span id="timerDisplay">00:00</span>
-        </div>
+        <div class="recording-timer" id="recordingTimer"><span>REC</span> <span id="timerDisplay">00:00</span></div>
     </div>
 
     <div class="search-area">
         <div class="input-group">
             <input type="text" id="sIn" placeholder="Cerca tra tutti i canali..." aria-label="Inserisci nome canale">
             <button class="btn" style="min-width: 80px;" onclick="doSearch()">Vai</button>
-            <button class="btn sec" onclick="initDB()">Ricarica Liste</button>
+            <button class="btn sec" onclick="initDB()">Aggiorna</button>
         </div>
-        <div id="res" class="results-scroll" role="list"></div>
+        <div id="res" role="list"></div>
     </div>
 
     <div class="debug-console" id="debugLog" role="log" aria-live="polite">
-        [Sistema] Log di attività pronto.
+        [Sistema] Pronto per Android, iOS e Windows.
     </div>
 
     <div class="settings-section">
-        <h3>Impostazioni Avanzate</h3>
-        <p style="font-size: 0.8em; color: #aaa; margin-bottom: 10px;">ScrapingAnt viene usato automaticamente se i proxy gratuiti falliscono dopo 15 secondi.</p>
-        <input type="password" id="apiKey" placeholder="ScrapingAnt API Key" value="f840651dc26e4d7382c1fd13f18f6e83" style="width:100%; margin:10px 0; padding:10px; border-radius:5px; border:none; background:#333; color:white;">
-        <div style="display: flex; gap: 10px;">
-            <button class="btn sec" onclick="saveSets()">Salva Nuova API</button>
-            <button class="btn sec" onclick="loadSets()">Carica Salvata</button>
-        </div>
+        <h3>Impostazioni</h3>
+        <input type="password" id="apiKey" value="f840651dc26e4d7382c1fd13f18f6e83" style="width:100%; margin:10px 0; padding:12px; background:#333; color:white; border:none; border-radius:8px;">
+        <button class="btn sec" onclick="saveSets()">Salva API Key</button>
     </div>
 </div>
 
@@ -326,7 +228,7 @@
 <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
 
 <script>
-    // LISTA INTEGRALE DELLE 18 SORGENTI ORIGINALI
+    // Configurazione integrale delle 18 fonti
     const M3U_SOURCES = [
         { name: 'RAI Collection', url: 'https://pastebin.com/raw/9vF0SRsy' },
         { name: 'Mediaset Premium', url: 'https://pastebin.com/raw/3ZDX8Tjt' },
@@ -373,93 +275,84 @@
         mainStatus.className = isWarning ? 'status-bar warning' : 'status-bar';
     }
 
-    // FUNZIONE FETCH PAZIENTE: PROVA PROXY PER 15S, POI API
+    // CARICAMENTO IBRIDO: Ottimizzato per Android/iOS e Windows
     async function fetchWithCORS(url, listName, attempt = 0) {
         const apiKey = document.getElementById('apiKey').value.trim();
         const cacheBuster = (url.includes('?') ? '&' : '?') + 't=' + Date.now();
         const finalUrl = url + cacheBuster;
 
-        // Tentativo DIRETTO (per chi ha estensione Allow CORS attiva)
+        // 1. Tentativo DIRETTO (Funziona se hai estensione su Windows)
         if (attempt === 0) {
             try {
                 const res = await fetch(finalUrl);
                 if (res.ok) {
                     const text = await res.text();
-                    if (text.includes("#EXTINF")) return text;
+                    if (text.includes("#EXTINF")) {
+                        log(`Successo Diretto: ${listName}`);
+                        return text;
+                    }
                 }
             } catch (e) {}
             return await fetchWithCORS(url, listName, 1);
         }
 
+        // 2. Tentativo Proxy Gratuito (Timeout 15s come richiesto)
         const proxies = [
             'https://api.allorigins.win/raw?url=',
-            'https://corsproxy.io/?',
-            'https://api.codetabs.com/v1/proxy?quest='
+            'https://corsproxy.io/?'
         ];
 
-        // 1. Prova i proxy gratuiti (15 secondi di timeout ciascuno)
         if (attempt <= proxies.length) {
-            const pUrl = proxies[attempt - 1] + encodeURIComponent(finalUrl);
-            log(`Tentativo ${listName} via Proxy ${attempt} (Attesa 15s)...`);
+            log(`Tentativo Proxy ${attempt} per ${listName} (15s)...`);
             try {
                 const controller = new AbortController();
-                const tid = setTimeout(() => controller.abort(), 15000); // 15 secondi richiesti
-                const res = await fetch(pUrl, { signal: controller.signal });
+                const tid = setTimeout(() => controller.abort(), 15000);
+                const res = await fetch(proxies[attempt - 1] + encodeURIComponent(finalUrl), { signal: controller.signal });
                 clearTimeout(tid);
                 if (res.ok) {
                     const text = await res.text();
-                    if (text && text.includes("#EXTINF")) {
-                        log(`Caricata: ${listName} (Successo Proxy)`);
-                        return text;
-                    }
+                    if (text.includes("#EXTINF")) return text;
                 }
             } catch (e) {}
             return await fetchWithCORS(url, listName, attempt + 1);
         }
 
-        // 2. Ultima risorsa: ScrapingAnt
+        // 3. Salvataggio finale con ScrapingAnt (Essenziale per Mobile)
         if (apiKey) {
-            log(`Tutti i proxy falliti per ${listName}. Utilizzo ScrapingAnt...`, true);
+            log(`Uso ScrapingAnt per ${listName}...`);
             try {
                 const saUrl = `https://api.scrapingant.com/v2/general?url=${encodeURIComponent(finalUrl)}&x-api-key=${apiKey}`;
                 const res = await fetch(saUrl);
                 if (res.ok) {
                     const json = await res.json();
-                    if (json.content && json.content.includes("#EXTINF")) {
-                        log(`Caricata: ${listName} (via ScrapingAnt)`);
-                        return json.content;
-                    }
+                    if (json.content) return json.content;
                 }
-            } catch (e) { log(`Errore ScrapingAnt per ${listName}`, true); }
+            } catch (e) {}
         }
-        throw new Error("Fallimento");
+        throw new Error("Fallito");
     }
 
     async function initDB() {
-        setStatus("Caricamento approfondito liste... Attendere prego.", true);
+        setStatus("Sincronizzazione canali in corso...", true);
         db = [];
         let loaded = 0;
 
-        // Caricamento sequenziale per dare tempo ai proxy di rispondere
-        for (let i = 0; i < M3U_SOURCES.length; i++) {
-            const src = M3U_SOURCES[i];
+        for (let src of M3U_SOURCES) {
             try {
                 const content = await fetchWithCORS(src.url, src.name);
                 if (content) {
                     parseM3U(content, src.name);
                     loaded++;
-                    pBar.style.width = Math.round(((i + 1) / M3U_SOURCES.length) * 100) + '%';
+                    pBar.style.width = Math.round((loaded / M3U_SOURCES.length) * 100) + '%';
                     updateGroups();
-                    setStatus(`Caricamento: ${loaded}/${M3U_SOURCES.length} liste pronte.`);
+                    setStatus(`Caricate ${loaded} liste su 18...`);
                 }
-            } catch (e) { log(`Saltata: ${src.name} (Tutti i tentativi falliti)`, true); }
-            await new Promise(r => setTimeout(r, 400));
+            } catch (e) { log(`Sorgente non disponibile: ${src.name}`, true); }
         }
-        setStatus(`Database pronto. ${Object.keys(grouped).length} canali trovati.`);
+        setStatus(`Pronto. ${Object.keys(grouped).length} canali trovati.`);
     }
 
     function parseM3U(data, srcName) {
-        if (!data || typeof data !== 'string') return;
         const lines = data.split(/\r?\n/);
         let cur = null;
         lines.forEach(l => {
@@ -490,7 +383,7 @@
     async function playLCN(name) {
         const k = name.toLowerCase().replace(/[^a-z0-9]/g, '');
         const entry = grouped[k];
-        if (!entry) { setStatus(`Canale ${name} non trovato nelle liste caricate.`, true); return; }
+        if (!entry) { setStatus(`Canale ${name} non trovato.`, true); return; }
 
         setStatus(`Connessione a ${name}...`);
         for (let l of entry.links) {
@@ -499,9 +392,9 @@
                 await startStream(l.url);
                 setStatus(`In onda: ${name}`);
                 return;
-            } catch (e) { log(`Fonte ${l.src} fallita.`, true); }
+            } catch (e) { log(`Fonte ${l.src} fallita per ${name}`, true); }
         }
-        setStatus(`Nessuna fonte funzionante per ${name}.`, true);
+        setStatus(`Nessuna fonte funzionante.`, true);
     }
 
     function startStream(url) {
@@ -510,7 +403,7 @@
             if (hls) { hls.destroy(); hls = null; }
             if (dash) { dash.reset(); dash = null; }
 
-            const timeout = setTimeout(() => reject("Timeout"), 15000);
+            const timeout = setTimeout(() => reject(), 15000);
 
             if (url.includes('.m3u8')) {
                 if (Hls.isSupported()) {
@@ -518,10 +411,9 @@
                     hls.loadSource(url); hls.attachMedia(video);
                     hls.on(Hls.Events.MANIFEST_PARSED, () => { clearTimeout(timeout); video.play().then(resolve).catch(reject); });
                     hls.on(Hls.Events.ERROR, (e, d) => { if (d.fatal) reject(); });
-                } else { video.src = url; video.play().then(resolve).catch(reject); }
-            } else if (url.includes('.mpd')) {
-                dash = dashjs.MediaPlayer().create(); dash.initialize(video, url, true);
-                video.onplaying = () => { clearTimeout(timeout); resolve(); };
+                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                    video.src = url; video.play().then(resolve).catch(reject);
+                }
             } else {
                 video.src = url; video.play().then(resolve).catch(reject);
             }
@@ -535,6 +427,7 @@
         Object.values(grouped).filter(ch => ch.name.toLowerCase().includes(q)).forEach(m => {
             const d = document.createElement('div');
             d.className = 'list-item';
+            d.style.cssText = "padding:15px; background:#2a2a2a; margin-top:8px; border-radius:10px; cursor:pointer; border-left:4px solid #4361ee;";
             d.textContent = m.name;
             d.onclick = () => playLCN(m.name);
             res.appendChild(d);
@@ -544,9 +437,12 @@
     function vUp() { video.volume = Math.min(1, video.volume + 0.1); }
     function vDown() { video.volume = Math.max(0, video.volume - 0.1); }
     function tMute() { video.muted = !video.muted; }
-    function toggleFS() { if (!document.fullscreenElement) video.requestFullscreen(); else document.exitFullscreen(); }
+    function toggleFS() { 
+        if (video.requestFullscreen) video.requestFullscreen();
+        else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen(); // Per iPhone
+    }
     
-    function saveSets() { localStorage.setItem('scrapingant_key', document.getElementById('apiKey').value); log("API Key salvata."); }
+    function saveSets() { localStorage.setItem('scrapingant_key', document.getElementById('apiKey').value); log("Impostazioni salvate."); }
     function loadSets() { const k = localStorage.getItem('scrapingant_key'); if (k) document.getElementById('apiKey').value = k; }
 
     function tRec() {
@@ -554,6 +450,7 @@
         if (!rec || rec.state === 'inactive') {
             chunks = [];
             const str = video.captureStream ? video.captureStream() : video.mozCaptureStream();
+            if (!str) { log("Registrazione non supportata su questo browser.", true); return; }
             rec = new MediaRecorder(str, { mimeType: 'video/webm' });
             rec.ondataavailable = e => chunks.push(e.data);
             rec.onstop = () => {
