@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TV ULTRA PRO v2026 - Fix 0 Canali</title>
+    <title>TV ULTRA PRO v2026 - Versione Integrale</title>
     <style>
+        /* STILE GENERALE */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -26,11 +27,13 @@
         h1 {
             text-align: center;
             color: #4361ee;
-            font-size: 2em;
+            font-size: 2.2em;
             margin-bottom: 20px;
             text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
+        /* BARRA DI STATO E PROGRESSO */
         .status-bar {
             background: #252525;
             padding: 15px;
@@ -41,11 +44,32 @@
             color: #2ecc71;
             border: 2px solid #333;
             font-size: 1.1em;
-            min-height: 60px;
+            min-height: 65px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .status-bar.warning { color: #f1c40f; border-color: #f1c40f; }
 
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background: #333;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            border: 1px solid #444;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4361ee, #2ecc71);
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        /* INTESTAZIONI SEZIONI */
         .section-header {
             background: #2a2a2a;
             padding: 15px;
@@ -57,9 +81,10 @@
 
         .section-header h2 { font-size: 1.4em; color: #4361ee; }
 
+        /* GRIGLIA PULSANTI TELECOMANDO */
         .remote-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
             gap: 12px;
             margin-bottom: 20px;
         }
@@ -75,6 +100,7 @@
             cursor: pointer;
             transition: all 0.2s ease;
             text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
 
         .channel-btn:hover, .channel-btn:focus {
@@ -82,8 +108,10 @@
             border-color: #fff;
             outline: 3px solid #fff;
             transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(67, 97, 238, 0.4);
         }
 
+        /* PLAYER VIDEO */
         .video-box {
             width: 100%;
             background: #000;
@@ -92,10 +120,12 @@
             margin-top: 30px;
             margin-bottom: 20px;
             aspect-ratio: 16 / 9;
+            border: 2px solid #333;
         }
 
         video { width: 100%; height: 100%; display: block; }
 
+        /* CONTROLLI PLAYER */
         .controls-row {
             display: flex;
             flex-wrap: wrap;
@@ -113,39 +143,15 @@
             border-radius: 10px;
             font-weight: bold;
             cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s;
         }
 
+        .btn:hover { background: #3f37c9; }
         .btn.sec { background: #444; }
+        .btn.sec:hover { background: #555; }
 
-        .debug-console {
-            margin-top: 30px;
-            background: #000;
-            color: #0f0;
-            font-family: monospace;
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 0.9em;
-            max-height: 250px;
-            overflow-y: auto;
-            border: 1px solid #333;
-        }
-
-        .progress-container {
-            width: 100%;
-            height: 10px;
-            background: #333;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            overflow: hidden;
-        }
-
-        .progress-bar {
-            height: 100%;
-            background: #4361ee;
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
+        /* REGISTRAZIONE */
         .recording-timer {
             display: none;
             align-items: center;
@@ -155,15 +161,78 @@
             color: white;
             border-radius: 25px;
             font-weight: bold;
+            animation: blink 1s infinite;
         }
 
+        @keyframes blink { 50% { opacity: 0.6; } }
         .recording-timer.active { display: flex; }
 
+        /* RICERCA E RISULTATI */
+        .search-area {
+            margin-top: 40px;
+            padding-top: 25px;
+            border-top: 2px solid #333;
+        }
+
+        .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
+
+        input[type="text"], input[type="password"] {
+            flex: 1;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #444;
+            background: #2a2a2a;
+            color: white;
+            font-size: 1em;
+        }
+
+        .results-scroll {
+            max-height: 350px;
+            overflow-y: auto;
+            display: grid;
+            gap: 10px;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #333;
+        }
+
+        .list-item {
+            padding: 15px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            cursor: pointer;
+            border-left: 4px solid #4361ee;
+            transition: background 0.2s;
+        }
+
+        .list-item:hover { background: #333; }
+
+        /* CONSOLE DEBUG */
+        .debug-console {
+            margin-top: 30px;
+            background: #000;
+            color: #0f0;
+            font-family: 'Consolas', monospace;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 0.9em;
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #333;
+        }
+
+        /* IMPOSTAZIONI */
         .settings-section {
             margin-top: 30px;
             background: #252525;
             padding: 20px;
             border-radius: 15px;
+            border: 1px solid #333;
+        }
+
+        @media (max-width: 600px) {
+            .remote-grid { grid-template-columns: 1fr 1fr; }
         }
     </style>
 </head>
@@ -215,7 +284,7 @@
     </nav>
 
     <div class="video-box">
-        <video id="player" controls aria-label="Player TV"></video>
+        <video id="player" controls aria-label="Visualizzatore TV"></video>
     </div>
 
     <div class="controls-row">
@@ -231,11 +300,11 @@
 
     <div class="search-area">
         <div class="input-group">
-            <input type="text" id="sIn" placeholder="Cerca canale..." aria-label="Inserisci nome canale">
+            <input type="text" id="sIn" placeholder="Cerca tra tutti i canali..." aria-label="Inserisci nome canale">
             <button class="btn" style="min-width: 80px;" onclick="doSearch()">Vai</button>
-            <button class="btn sec" onclick="initDB()">Forza Ricarica Liste</button>
+            <button class="btn sec" onclick="initDB()">Ricarica Liste</button>
         </div>
-        <div id="res" role="list"></div>
+        <div id="res" class="results-scroll" role="list"></div>
     </div>
 
     <div class="debug-console" id="debugLog" role="log" aria-live="polite">
@@ -244,9 +313,12 @@
 
     <div class="settings-section">
         <h3>Impostazioni Avanzate</h3>
+        <p style="font-size: 0.8em; color: #aaa; margin-bottom: 10px;">ScrapingAnt viene usato automaticamente se i proxy gratuiti falliscono dopo 15 secondi.</p>
         <input type="password" id="apiKey" placeholder="ScrapingAnt API Key" value="f840651dc26e4d7382c1fd13f18f6e83" style="width:100%; margin:10px 0; padding:10px; border-radius:5px; border:none; background:#333; color:white;">
-        <button class="btn sec" onclick="saveSets()">Salva API Key</button>
-        <button class="btn sec" onclick="loadSets()">Carica API Key</button>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn sec" onclick="saveSets()">Salva Nuova API</button>
+            <button class="btn sec" onclick="loadSets()">Carica Salvata</button>
+        </div>
     </div>
 </div>
 
@@ -254,6 +326,7 @@
 <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
 
 <script>
+    // LISTA INTEGRALE DELLE 18 SORGENTI ORIGINALI
     const M3U_SOURCES = [
         { name: 'RAI Collection', url: 'https://pastebin.com/raw/9vF0SRsy' },
         { name: 'Mediaset Premium', url: 'https://pastebin.com/raw/3ZDX8Tjt' },
@@ -300,83 +373,98 @@
         mainStatus.className = isWarning ? 'status-bar warning' : 'status-bar';
     }
 
-    async function fetchWithCORS(url, listName, attempt = 1) {
+    // FUNZIONE FETCH PAZIENTE: PROVA PROXY PER 15S, POI API
+    async function fetchWithCORS(url, listName, attempt = 0) {
         const apiKey = document.getElementById('apiKey').value.trim();
         const cacheBuster = (url.includes('?') ? '&' : '?') + 't=' + Date.now();
         const finalUrl = url + cacheBuster;
 
-        const freeProxies = [
+        // Tentativo DIRETTO (per chi ha estensione Allow CORS attiva)
+        if (attempt === 0) {
+            try {
+                const res = await fetch(finalUrl);
+                if (res.ok) {
+                    const text = await res.text();
+                    if (text.includes("#EXTINF")) return text;
+                }
+            } catch (e) {}
+            return await fetchWithCORS(url, listName, 1);
+        }
+
+        const proxies = [
             'https://api.allorigins.win/raw?url=',
             'https://corsproxy.io/?',
             'https://api.codetabs.com/v1/proxy?quest='
         ];
 
-        if (attempt <= freeProxies.length) {
-            const proxyUrl = freeProxies[attempt - 1] + encodeURIComponent(finalUrl);
+        // 1. Prova i proxy gratuiti (15 secondi di timeout ciascuno)
+        if (attempt <= proxies.length) {
+            const pUrl = proxies[attempt - 1] + encodeURIComponent(finalUrl);
+            log(`Tentativo ${listName} via Proxy ${attempt} (Attesa 15s)...`);
             try {
                 const controller = new AbortController();
-                const tid = setTimeout(() => controller.abort(), 12000);
-                const res = await fetch(proxyUrl, { signal: controller.signal });
+                const tid = setTimeout(() => controller.abort(), 15000); // 15 secondi richiesti
+                const res = await fetch(pUrl, { signal: controller.signal });
                 clearTimeout(tid);
                 if (res.ok) {
-                    log(`Caricata: ${listName} (Proxy Gratuito ${attempt})`);
-                    return await res.text();
+                    const text = await res.text();
+                    if (text && text.includes("#EXTINF")) {
+                        log(`Caricata: ${listName} (Successo Proxy)`);
+                        return text;
+                    }
                 }
-            } catch (e) {
-                return await fetchWithCORS(url, listName, attempt + 1);
-            }
+            } catch (e) {}
+            return await fetchWithCORS(url, listName, attempt + 1);
         }
 
+        // 2. Ultima risorsa: ScrapingAnt
         if (apiKey) {
-            log(`Proxy gratuiti falliti per ${listName}. Uso ScrapingAnt...`, true);
+            log(`Tutti i proxy falliti per ${listName}. Utilizzo ScrapingAnt...`, true);
             try {
-                const res = await fetch('https://api.scrapingant.com/v2/general', {
-                    method: 'POST', headers: {'x-api-key': apiKey, 'Content-Type': 'application/json'},
-                    body: JSON.stringify({url: finalUrl, browser: false})
-                });
+                const saUrl = `https://api.scrapingant.com/v2/general?url=${encodeURIComponent(finalUrl)}&x-api-key=${apiKey}`;
+                const res = await fetch(saUrl);
                 if (res.ok) {
                     const json = await res.json();
-                    log(`Caricata: ${listName} (via ScrapingAnt)`);
-                    return json.content; // Ritorna il contenuto M3U estratto dal JSON
+                    if (json.content && json.content.includes("#EXTINF")) {
+                        log(`Caricata: ${listName} (via ScrapingAnt)`);
+                        return json.content;
+                    }
                 }
-            } catch (e) { log(`Fallimento totale per ${listName}`, true); }
+            } catch (e) { log(`Errore ScrapingAnt per ${listName}`, true); }
         }
-        throw new Error("Errore");
+        throw new Error("Fallimento");
     }
 
     async function initDB() {
-        setStatus("Caricamento liste in corso...", true);
+        setStatus("Caricamento approfondito liste... Attendere prego.", true);
         db = [];
         let loaded = 0;
-        const batchSize = 2;
 
-        for (let i = 0; i < M3U_SOURCES.length; i += batchSize) {
-            const batch = M3U_SOURCES.slice(i, i + batchSize);
-            const promises = batch.map(async (src) => {
-                try {
-                    const content = await fetchWithCORS(src.url, src.name);
-                    if (content) {
-                        parse(content, src.name);
-                        loaded++;
-                        pBar.style.width = Math.round((loaded / M3U_SOURCES.length) * 100) + '%';
-                        updateGroups();
-                    }
-                } catch (e) { log(`Saltata: ${src.name}`, true); }
-            });
-            await Promise.allSettled(promises);
-            await new Promise(r => setTimeout(r, 800));
+        // Caricamento sequenziale per dare tempo ai proxy di rispondere
+        for (let i = 0; i < M3U_SOURCES.length; i++) {
+            const src = M3U_SOURCES[i];
+            try {
+                const content = await fetchWithCORS(src.url, src.name);
+                if (content) {
+                    parseM3U(content, src.name);
+                    loaded++;
+                    pBar.style.width = Math.round(((i + 1) / M3U_SOURCES.length) * 100) + '%';
+                    updateGroups();
+                    setStatus(`Caricamento: ${loaded}/${M3U_SOURCES.length} liste pronte.`);
+                }
+            } catch (e) { log(`Saltata: ${src.name} (Tutti i tentativi falliti)`, true); }
+            await new Promise(r => setTimeout(r, 400));
         }
         setStatus(`Database pronto. ${Object.keys(grouped).length} canali trovati.`);
     }
 
-    function parse(data, srcName) {
+    function parseM3U(data, srcName) {
         if (!data || typeof data !== 'string') return;
         const lines = data.split(/\r?\n/);
         let cur = null;
         lines.forEach(l => {
             l = l.trim();
             if (l.startsWith('#EXTINF:')) {
-                // Parsing più robusto del nome (tutto ciò che segue l'ultima virgola)
                 const commaIndex = l.lastIndexOf(',');
                 if (commaIndex !== -1) {
                     const name = l.substring(commaIndex + 1).trim();
@@ -402,15 +490,16 @@
     async function playLCN(name) {
         const k = name.toLowerCase().replace(/[^a-z0-9]/g, '');
         const entry = grouped[k];
-        if (!entry) { setStatus(`Canale ${name} non ancora caricato.`, true); return; }
+        if (!entry) { setStatus(`Canale ${name} non trovato nelle liste caricate.`, true); return; }
 
         setStatus(`Connessione a ${name}...`);
         for (let l of entry.links) {
             try {
+                log(`Provo fonte: ${l.src}`);
                 await startStream(l.url);
                 setStatus(`In onda: ${name}`);
                 return;
-            } catch (e) { log(`Fonte ${l.src} fallita per ${name}`, true); }
+            } catch (e) { log(`Fonte ${l.src} fallita.`, true); }
         }
         setStatus(`Nessuna fonte funzionante per ${name}.`, true);
     }
@@ -421,20 +510,20 @@
             if (hls) { hls.destroy(); hls = null; }
             if (dash) { dash.reset(); dash = null; }
 
-            const timeout = setTimeout(() => reject(), 15000);
+            const timeout = setTimeout(() => reject("Timeout"), 15000);
 
             if (url.includes('.m3u8')) {
                 if (Hls.isSupported()) {
                     hls = new Hls({ manifestLoadingTimeOut: 10000, xhrSetup: xhr => xhr.withCredentials = false });
                     hls.loadSource(url); hls.attachMedia(video);
-                    hls.on(Hls.Events.MANIFEST_PARSED, () => { clearTimeout(timeout); video.play(); resolve(); });
+                    hls.on(Hls.Events.MANIFEST_PARSED, () => { clearTimeout(timeout); video.play().then(resolve).catch(reject); });
                     hls.on(Hls.Events.ERROR, (e, d) => { if (d.fatal) reject(); });
-                } else { video.src = url; video.play().then(() => { clearTimeout(timeout); resolve(); }).catch(reject); }
+                } else { video.src = url; video.play().then(resolve).catch(reject); }
             } else if (url.includes('.mpd')) {
                 dash = dashjs.MediaPlayer().create(); dash.initialize(video, url, true);
                 video.onplaying = () => { clearTimeout(timeout); resolve(); };
             } else {
-                video.src = url; video.play().then(() => { clearTimeout(timeout); resolve(); }).catch(reject);
+                video.src = url; video.play().then(resolve).catch(reject);
             }
         });
     }
@@ -445,7 +534,7 @@
         res.innerHTML = '';
         Object.values(grouped).filter(ch => ch.name.toLowerCase().includes(q)).forEach(m => {
             const d = document.createElement('div');
-            d.style.cssText = "padding:12px; background:#333; margin-top:5px; border-radius:8px; cursor:pointer;";
+            d.className = 'list-item';
             d.textContent = m.name;
             d.onclick = () => playLCN(m.name);
             res.appendChild(d);
@@ -457,7 +546,7 @@
     function tMute() { video.muted = !video.muted; }
     function toggleFS() { if (!document.fullscreenElement) video.requestFullscreen(); else document.exitFullscreen(); }
     
-    function saveSets() { localStorage.setItem('scrapingant_key', document.getElementById('apiKey').value); log("Impostazioni salvate."); }
+    function saveSets() { localStorage.setItem('scrapingant_key', document.getElementById('apiKey').value); log("API Key salvata."); }
     function loadSets() { const k = localStorage.getItem('scrapingant_key'); if (k) document.getElementById('apiKey').value = k; }
 
     function tRec() {
