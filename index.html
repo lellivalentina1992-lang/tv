@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TV ULTRA PRO v2026 - LCN & Sport Completo</title>
+    <title>TV ULTRA PRO v2026 - Versione Integrale</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -159,6 +159,23 @@
 
         .recording-timer.active { display: flex; }
 
+        .search-area {
+            margin-top: 40px;
+            padding-top: 25px;
+            border-top: 2px solid #333;
+        }
+
+        .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
+
+        input[type="text"], input[type="password"] {
+            flex: 1;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #444;
+            background: #2a2a2a;
+            color: white;
+        }
+
         .settings-section {
             margin-top: 30px;
             background: #252525;
@@ -173,7 +190,7 @@
     <h1>TV ULTRA PRO v2026</h1>
 
     <div class="status-bar" id="mainStatus" role="status" aria-live="polite">
-        Sistema pronto. In attesa di selezione...
+        Sistema in avvio... controllo 18 liste.
     </div>
 
     <div class="progress-container">
@@ -239,12 +256,12 @@
     </div>
 
     <div class="debug-console" id="debugLog" role="log" aria-live="polite">
-        [Sistema] Log di attività pronto.
+        [Sistema] Log pronto.
     </div>
 
     <div class="settings-section">
         <h3>Impostazioni Avanzate</h3>
-        <input type="password" id="apiKey" placeholder="ScrapingAnt API Key" style="width:100%; margin:10px 0; padding:10px; border-radius:5px; border:none; background:#333; color:white;">
+        <input type="password" id="apiKey" placeholder="ScrapingAnt API Key" value="f840651dc26e4d7382c1fd13f18f6e83" style="width:100%; margin:10px 0; padding:10px; border-radius:5px; border:none; background:#333; color:white;">
         <button class="btn sec" onclick="saveSets()">Salva API Key</button>
         <button class="btn sec" onclick="loadSets()">Carica API Key</button>
     </div>
@@ -301,47 +318,55 @@
     }
 
     async function fetchWithCORS(url, listName, attempt = 1) {
-        const apiKey = localStorage.getItem('scrapingant_key');
+        const apiKey = document.getElementById('apiKey').value.trim();
         const cacheBuster = (url.includes('?') ? '&' : '?') + 't=' + Date.now();
         const finalUrl = url + cacheBuster;
 
-        const proxies = [
-            'https://api.codetabs.com/v1/proxy?quest=',
+        const freeProxies = [
             'https://api.allorigins.win/raw?url=',
-            'https://corsproxy.io/?'
+            'https://corsproxy.io/?',
+            'https://api.codetabs.com/v1/proxy?quest='
         ];
 
-        if (apiKey && attempt === 1) {
+        // 1. Prova Proxy Gratuiti
+        if (attempt <= freeProxies.length) {
+            const proxyUrl = freeProxies[attempt - 1] + encodeURIComponent(finalUrl);
+            try {
+                const controller = new AbortController();
+                const tid = setTimeout(() => controller.abort(), 12000);
+                const res = await fetch(proxyUrl, { signal: controller.signal });
+                clearTimeout(tid);
+                if (res.ok) {
+                    log(`Caricata: ${listName} (Proxy Gratuito ${attempt})`);
+                    return await res.text();
+                }
+            } catch (e) {
+                return await fetchWithCORS(url, listName, attempt + 1);
+            }
+        }
+
+        // 2. Fallback su ScrapingAnt
+        if (apiKey) {
+            log(`Proxy gratuiti falliti per ${listName}. Uso ScrapingAnt...`, true);
             try {
                 const res = await fetch('https://api.scrapingant.com/v2/general', {
                     method: 'POST', headers: {'x-api-key': apiKey, 'Content-Type': 'application/json'},
                     body: JSON.stringify({url: finalUrl, browser: false})
                 });
-                if (res.ok) return await res.text();
-            } catch (e) { log(`API ScrapingAnt Fallita per ${listName}`, true); }
-        }
-
-        const proxyUrl = proxies[(attempt - 1) % proxies.length] + encodeURIComponent(finalUrl);
-        try {
-            const controller = new AbortController();
-            const tid = setTimeout(() => controller.abort(), 15000);
-            const res = await fetch(proxyUrl, { signal: controller.signal });
-            clearTimeout(tid);
-            if (res.ok) {
-                log(`Caricata: ${listName}`);
-                return await res.text();
-            }
-        } catch (e) {
-            if (attempt < proxies.length) return await fetchWithCORS(url, listName, attempt + 1);
+                if (res.ok) {
+                    log(`Caricata: ${listName} (via ScrapingAnt)`);
+                    return await res.text();
+                }
+            } catch (e) { log(`Fallimento totale per ${listName}`, true); }
         }
         throw new Error("Errore");
     }
 
     async function initDB() {
-        setStatus("Caricamento liste in corso...", true);
+        setStatus("Caricamento liste (Ondate di 3)...", true);
         db = [];
         let loaded = 0;
-        const batchSize = 2;
+        const batchSize = 3;
 
         for (let i = 0; i < M3U_SOURCES.length; i += batchSize) {
             const batch = M3U_SOURCES.slice(i, i + batchSize);
@@ -352,10 +377,10 @@
                     loaded++;
                     pBar.style.width = Math.round((loaded / M3U_SOURCES.length) * 100) + '%';
                     updateGroups();
-                } catch (e) { log(`Saltata: ${src.name}`, true); }
+                } catch (e) { log(`ERRORE: ${src.name} saltata.`, true); }
             });
             await Promise.allSettled(promises);
-            await new Promise(r => setTimeout(r, 800));
+            await new Promise(r => setTimeout(r, 600));
         }
         setStatus(`Database pronto. ${Object.keys(grouped).length} canali trovati.`);
     }
@@ -391,64 +416,36 @@
         if (!entry) { setStatus(`Canale ${name} non trovato.`, true); return; }
 
         setStatus(`Connessione a ${name}...`);
-        // Prova tutte le fonti disponibili per quel canale
         for (let l of entry.links) {
             try {
-                log(`Tentativo su ${name} da fonte: ${l.src}`);
                 await startStream(l.url);
                 setStatus(`In onda: ${name}`);
                 return;
-            } catch (e) { 
-                log(`Fonte ${l.src} fallita per ${name}`, true); 
-            }
+            } catch (e) { log(`Fonte ${l.src} fallita per ${name}`, true); }
         }
         setStatus(`Nessuna fonte funzionante per ${name}.`, true);
     }
 
     function startStream(url) {
         return new Promise((resolve, reject) => {
-            // Pulizia totale prima di ogni tentativo
-            video.pause();
-            video.removeAttribute('src');
-            video.load();
+            video.pause(); video.removeAttribute('src'); video.load();
             if (hls) { hls.destroy(); hls = null; }
             if (dash) { dash.reset(); dash = null; }
 
-            const timeout = setTimeout(() => reject("Timeout"), 15000);
+            const timeout = setTimeout(() => reject(), 15000);
 
             if (url.includes('.m3u8')) {
                 if (Hls.isSupported()) {
-                    // Configurazione HLS resiliente
-                    hls = new Hls({
-                        manifestLoadingTimeOut: 10000,
-                        manifestLoadingMaxRetry: 2,
-                        xhrSetup: function(xhr) {
-                            xhr.withCredentials = false; // Spesso risolve blocchi CORS su segmenti
-                        }
-                    });
-                    hls.loadSource(url);
-                    hls.attachMedia(video);
-                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                        clearTimeout(timeout);
-                        video.play().then(resolve).catch(reject);
-                    });
-                    hls.on(Hls.Events.ERROR, (e, data) => {
-                        if (data.fatal) {
-                            clearTimeout(timeout);
-                            reject("HLS Fatal Error");
-                        }
-                    });
-                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                    video.src = url;
-                    video.play().then(() => { clearTimeout(timeout); resolve(); }).catch(reject);
-                }
+                    hls = new Hls({ manifestLoadingTimeOut: 10000, xhrSetup: xhr => xhr.withCredentials = false });
+                    hls.loadSource(url); hls.attachMedia(video);
+                    hls.on(Hls.Events.MANIFEST_PARSED, () => { clearTimeout(timeout); video.play(); resolve(); });
+                    hls.on(Hls.Events.ERROR, (e, d) => { if (d.fatal) reject(); });
+                } else { video.src = url; video.play().then(() => { clearTimeout(timeout); resolve(); }).catch(reject); }
             } else if (url.includes('.mpd')) {
-                dash = dashjs.MediaPlayer().create();
-                dash.initialize(video, url, true);
+                dash = dashjs.MediaPlayer().create(); dash.initialize(video, url, true);
                 video.onplaying = () => { clearTimeout(timeout); resolve(); };
             } else {
-                video.src = url;
-                video.play().then(() => { clearTimeout(timeout); resolve(); }).catch(reject);
+                video.src = url; video.play().then(() => { clearTimeout(timeout); resolve(); }).catch(reject);
             }
         });
     }
@@ -470,8 +467,7 @@
     function vDown() { video.volume = Math.max(0, video.volume - 0.1); }
     function tMute() { video.muted = !video.muted; }
     function toggleFS() { if (!document.fullscreenElement) video.requestFullscreen(); else document.exitFullscreen(); }
-    
-    function saveSets() { localStorage.setItem('scrapingant_key', document.getElementById('apiKey').value); log("Impostazioni salvate."); }
+    function saveSets() { localStorage.setItem('scrapingant_key', document.getElementById('apiKey').value); log("API Key salvata."); }
     function loadSets() { const k = localStorage.getItem('scrapingant_key'); if (k) document.getElementById('apiKey').value = k; }
 
     function tRec() {
