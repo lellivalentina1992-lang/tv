@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TV ULTRA PRO v2026 - LCN Accessibile</title>
+    <title>TV ULTRA PRO v2026 - LCN & Sport</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -194,13 +194,24 @@
         <button class="channel-btn" onclick="playLCN('La7')" aria-label="7, La 7">7, La 7</button>
         <button class="channel-btn" onclick="playLCN('TV8')" aria-label="8, TV 8">8, TV 8</button>
         <button class="channel-btn" onclick="playLCN('Nove')" aria-label="9, Nove">9, Nove</button>
-        
         <button class="channel-btn" onclick="playLCN('20 Mediaset')" aria-label="20, 20 Mediaset">20, 20</button>
         <button class="channel-btn" onclick="playLCN('Rai 4')" aria-label="21, Rai 4">21, Rai 4</button>
         <button class="channel-btn" onclick="playLCN('Iris')" aria-label="22, Iris">22, Iris</button>
         <button class="channel-btn" onclick="playLCN('Rai Movie')" aria-label="24, Rai Movie">24, Rai Movie</button>
         <button class="channel-btn" onclick="playLCN('La5')" aria-label="30, La 5">30, La 5</button>
         <button class="channel-btn" onclick="playLCN('Real Time')" aria-label="31, Real Time">31, Real Time</button>
+    </nav>
+
+    <section class="section-header">
+        <h2>Canali Sportivi</h2>
+    </section>
+
+    <nav class="remote-grid" aria-label="Telecomando sport">
+        <button class="channel-btn" onclick="playLCN('Rai Sport')" aria-label="57, Rai Sport">57, Rai Sport</button>
+        <button class="channel-btn" onclick="playLCN('Sportitalia')" aria-label="60, Sportitalia">60, Sportitalia</button>
+        <button class="channel-btn" onclick="playLCN('SuperTennis')" aria-label="64, SuperTennis">64, SuperTennis</button>
+        <button class="channel-btn" onclick="playLCN('Eurosport')" aria-label="Eurosport">Eurosport</button>
+        <button class="channel-btn" onclick="playLCN('Sky Sport 24')" aria-label="Sky Sport 24">Sky Sport 24</button>
     </nav>
 
     <div class="video-box">
@@ -220,7 +231,7 @@
 
     <div class="search-area">
         <div class="input-group">
-            <input type="text" id="sIn" placeholder="Cerca canale..." aria-label="Inserisci nome canale per cercare">
+            <input type="text" id="sIn" placeholder="Cerca canale..." aria-label="Inserisci nome canale">
             <button class="btn" style="min-width: 80px;" onclick="doSearch()">Vai</button>
             <button class="btn sec" onclick="initDB()">Forza Ricarica Liste</button>
         </div>
@@ -243,7 +254,6 @@
 <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
 
 <script>
-    // Tutte le 18 sorgenti originali caricate a ondate
     const M3U_SOURCES = [
         { name: 'RAI Collection', url: 'https://pastebin.com/raw/9vF0SRsy' },
         { name: 'Mediaset Premium', url: 'https://pastebin.com/raw/3ZDX8Tjt' },
@@ -292,7 +302,13 @@
 
     async function fetchWithCORS(url, listName, attempt = 1) {
         const apiKey = localStorage.getItem('scrapingant_key');
+        
+        // Anti-Cache String
+        const cacheBuster = (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+        const finalUrl = url + cacheBuster;
+
         const proxies = [
+            'https://api.codetabs.com/v1/proxy?quest=',
             'https://api.allorigins.win/raw?url=',
             'https://corsproxy.io/?',
             'https://thingproxy.freeboard.io/fetch/'
@@ -302,16 +318,16 @@
             try {
                 const res = await fetch('https://api.scrapingant.com/v2/general', {
                     method: 'POST', headers: {'x-api-key': apiKey, 'Content-Type': 'application/json'},
-                    body: JSON.stringify({url: url, browser: false})
+                    body: JSON.stringify({url: finalUrl, browser: false})
                 });
                 if (res.ok) return await res.text();
-            } catch (e) { log(`API Fallita, provo proxy...`, true); }
+            } catch (e) { log(`API ScrapingAnt Fallita...`, true); }
         }
 
-        const proxyUrl = proxies[(attempt - 1) % proxies.length] + encodeURIComponent(url);
+        const proxyUrl = proxies[(attempt - 1) % proxies.length] + encodeURIComponent(finalUrl);
         try {
             const controller = new AbortController();
-            const tid = setTimeout(() => controller.abort(), 12000);
+            const tid = setTimeout(() => controller.abort(), 15000); // Alzato a 15s per Pastebin
             const res = await fetch(proxyUrl, { signal: controller.signal });
             clearTimeout(tid);
             if (res.ok) {
@@ -319,16 +335,16 @@
                 return await res.text();
             }
         } catch (e) {
-            if (attempt < 2) return await fetchWithCORS(url, listName, attempt + 1);
+            if (attempt < proxies.length) return await fetchWithCORS(url, listName, attempt + 1);
         }
-        throw new Error("Errore");
+        throw new Error("Errore critico");
     }
 
     async function initDB() {
-        setStatus("Caricamento liste in corso (3 alla volta)...", true);
+        setStatus("Caricamento dinamico a scaglioni (Anti-Blocco)...", true);
         db = [];
         let loaded = 0;
-        const batchSize = 3;
+        const batchSize = 2; // Ridotto a 2 per evitare rate-limit dai proxy
 
         for (let i = 0; i < M3U_SOURCES.length; i += batchSize) {
             const batch = M3U_SOURCES.slice(i, i + batchSize);
@@ -339,10 +355,10 @@
                     loaded++;
                     pBar.style.width = Math.round((loaded / M3U_SOURCES.length) * 100) + '%';
                     updateGroups();
-                } catch (e) { log(`Saltata: ${src.name}`, true); }
+                } catch (e) { log(`Saltata definitivamente: ${src.name}`, true); }
             });
             await Promise.allSettled(promises);
-            await new Promise(r => setTimeout(r, 600));
+            await new Promise(r => setTimeout(r, 1000)); // Pausa 1s tra lotti
         }
         setStatus(`Database pronto. ${Object.keys(grouped).length} canali trovati.`);
     }
@@ -375,7 +391,7 @@
     async function playLCN(name) {
         const k = name.toLowerCase().replace(/[^a-z0-9]/g, '');
         const entry = grouped[k];
-        if (!entry) { setStatus(`Canale ${name} non ancora caricato.`, true); return; }
+        if (!entry) { setStatus(`Canale ${name} non trovato.`, true); return; }
 
         setStatus(`Connessione a ${name}...`);
         for (let l of entry.links) {
